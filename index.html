@@ -1,126 +1,415 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>BLE Test - SPIN X</title>
-<style>
-  :root{--teal:#127C8E;--teal-d:#0C5F6E;--green:#37BE5B;--red:#E24C4C;--ink:#123038;--bg:#eaf4f5}
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg);padding:18px;max-width:560px;margin:0 auto}
-  h1{font-size:20px;margin:6px 0 2px}
-  .sub{color:#5a6b73;font-size:13px;margin-bottom:16px}
-  .status{display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:14px}
-  .dot{width:12px;height:12px;border-radius:50%;background:#c04}.dot.on{background:var(--green)}
-  button{border:none;border-radius:12px;padding:14px 16px;font-size:16px;font-weight:800;color:#fff;cursor:pointer}
-  .primary{background:var(--teal);width:100%;margin-bottom:14px}
-  .primary.dis{background:var(--red)}
-  .row{display:flex;gap:10px;margin-bottom:12px}
-  .row button{flex:1;background:var(--teal-d)}
-  .send{display:flex;gap:10px;margin-bottom:14px}
-  .send input{flex:1;border:2px solid #b9d6da;border-radius:12px;padding:12px;font-size:16px}
-  .send button{background:var(--green);padding:12px 18px}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  .log{background:#0e1f24;color:#9fe6b0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;border-radius:12px;padding:12px;height:230px;overflow:auto;white-space:pre-wrap;line-height:1.5}
-  .log .tx{color:#7fd0ff}.log .sys{color:#e6c07f}.log .err{color:#ff8b8b}
-  .clr{background:#8fb0b8;padding:8px 12px;font-size:13px;border-radius:9px;margin-top:8px}
-  .warn{background:#fde2e2;color:#9a2b2b;border:1px solid #f0b4b4;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;margin-bottom:14px;display:none}
-</style>
-</head>
-<body>
-  <h1>BLE Test &mdash; SPIN X</h1>
-  <div class="sub">ESP32-S3 via Web Bluetooth. No iPhone, abra esta pagina no app <b>Bluefy</b>.</div>
-
-  <div id="warn" class="warn"></div>
-
-  <div class="status"><span id="dot" class="dot"></span><span id="stat">Desconectado</span></div>
-
-  <button id="btnConn" class="primary">Conectar</button>
-
-  <div class="row">
-    <button id="btnOn"  disabled>LED ON</button>
-    <button id="btnOff" disabled>LED OFF</button>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AUTOCOAT | SPIN X Lite</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script><style>
+:root{--teal:#127C8E;--teal-d:#0C5F6E;--teal-l:#2A9CB0;--bg1:#CDEAEE;--bg2:#A9D6DD;--card:#E6F5F5;--line:#1B7A8C;--green:#37BE5B;--green-d:#2AA34C;--muted:#6B7C86;--ink:#123038;--red:#E24C4C;--amber:#E9A13B;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%}
+body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--bg1),var(--bg2));display:flex;flex-direction:column;min-height:100dvh}
+.hidden{display:none!important}
+.hdr{background:var(--teal);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:5;position:relative}
+.hdr .logo-sx{height:24px;filter:brightness(0) invert(1)}
+.hdr .name{flex:1;text-align:center;font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{background:var(--green);color:#fff;font-weight:700;font-size:11px;padding:5px 9px;border-radius:8px;white-space:nowrap}.badge.run{background:var(--amber)}.badge.stop{background:var(--red)}.badge.guest{background:#6b8b93}
+.menubtn{background:rgba(255,255,255,.15);border:none;color:#fff;width:38px;height:38px;border-radius:10px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.menu{position:absolute;top:56px;right:12px;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);min-width:210px;overflow:hidden;z-index:30}
+.menu a{display:flex;align-items:center;gap:10px;padding:14px 16px;color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;border-bottom:1px solid #eef3f4}
+.menu a:hover{background:#f0f8f8}.menu a .ic{width:20px;text-align:center}.menu a.lock{color:#9fb0b6}.menu a.lock .ic{opacity:.6}
+.menu .sep{height:6px;background:#f2f7f8}
+main{flex:1;overflow-y:auto;padding:14px 16px 96px;max-width:760px;width:100%;margin:0 auto}
+.hero{text-align:center;margin:6px 0 14px}.hero img{height:44px}
+h2.sec{color:var(--teal-d);font-size:18px;margin:4px 0 12px}
+.note{background:#fff6e5;border:1px solid #f0d59a;color:#8a6a1f;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;margin-bottom:14px}
+/* control */
+.vacrow{display:flex;justify-content:center;margin-bottom:14px}
+.vacbtn{border:none;border-radius:14px;padding:12px 26px;font-size:16px;font-weight:800;color:#fff;background:#8fb0b8;letter-spacing:1px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.12)}.vacbtn.on{background:var(--green);box-shadow:0 3px 0 var(--green-d)}
+.readouts{display:flex;gap:12px;justify-content:center;margin:6px 0 14px;flex-wrap:wrap}
+.ro{background:var(--card);border:5px solid var(--line);border-radius:50%;width:30vw;max-width:165px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(11,60,70,.18)}
+.ro .lab{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1px}.ro .val{font-size:min(9vw,42px);font-weight:800;line-height:1}.ro .unit{font-size:10px;font-weight:700;color:var(--muted)}
+.actions{display:flex;flex-direction:column;gap:12px;max-width:420px;margin:14px auto 0}
+.big{border:none;border-radius:16px;padding:18px;font-size:22px;font-weight:800;letter-spacing:2px;color:#fff;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.18)}
+.big.start{background:var(--teal);box-shadow:0 4px 0 var(--teal-d)}.big.stop{background:var(--red);box-shadow:0 4px 0 #a52f2f}.big:disabled{background:#a9c3c8;box-shadow:0 4px 0 #90aeb3;opacity:.7}
+/* recipes */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}@media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+.rcard{background:var(--card);border:2px solid rgba(27,122,140,.35);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}.rcard.active{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+.rcard .rn{font-weight:800;color:var(--teal-d);font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rcard .meta{font-size:12px;color:var(--muted);font-weight:600}.rcard .row{display:flex;gap:8px;margin-top:4px}
+.mini{flex:1;border:none;border-radius:9px;padding:8px;font-weight:700;font-size:13px;cursor:pointer}.mini.edit{background:#d3e9ec;color:var(--teal-d)}.mini.use{background:var(--green);color:#fff}.mini.use.active{background:#9fce9f}
+/* editor */
+.edname{display:flex;gap:8px;margin-bottom:16px}.edname input{flex:1;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:18px;font-weight:800;color:var(--teal-d);background:var(--card);text-transform:uppercase}
+.tabs{display:flex;gap:6px;justify-content:center;margin-bottom:4px;flex-wrap:wrap}.tab{width:44px;height:44px;border-radius:10px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:16px;color:var(--muted);cursor:pointer}.tab.on{background:var(--line);color:#fff}.tab.active{outline:3px solid var(--green);outline-offset:1px}
+.stepbtns{display:flex;gap:8px;justify-content:center;margin:8px 0 18px}.stepbtns button{border:none;border-radius:9px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;background:#d3e9ec;color:var(--teal-d)}
+.field{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:2px solid rgba(27,122,140,.3);border-radius:14px;padding:10px 12px;margin-bottom:12px}
+.field .fl{font-weight:800;color:var(--muted);width:66px}.field .fl small{display:block;font-weight:600;font-size:10px}
+.stepper{display:flex;align-items:center;gap:10px}.stepper button{width:44px;height:44px;border:none;border-radius:12px;font-size:24px;font-weight:800;background:var(--teal);color:#fff;cursor:pointer}.stepper input{width:96px;text-align:center;font-size:24px;font-weight:800;border:2px solid transparent;border-radius:8px;background:#fff}.stepper input:focus{outline:none;border-color:var(--teal-l)}
+.edactions{display:flex;gap:12px;margin-top:8px}.edactions button{flex:1;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:800;color:#fff;cursor:pointer}.edactions .save{background:var(--teal)}.edactions .back{background:#8fb0b8}
+/* utilities */
+.util{background:var(--card);border:2px solid rgba(27,122,140,.3);border-radius:16px;padding:16px;margin-bottom:16px}
+.util h3{margin:0 0 4px;color:var(--teal-d);font-size:16px}.util .desc{color:var(--muted);font-size:13px;margin-bottom:12px}
+.urow{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.urow label{flex:1;min-width:120px;font-weight:700;font-size:14px;color:var(--ink)}
+.urow input,.urow select{width:130px;border:2px solid #b9d6da;border-radius:10px;padding:10px;font-size:15px;font-weight:700}
+.ubtn{border:none;border-radius:12px;padding:12px;font-size:15px;font-weight:800;color:#fff;background:var(--teal);width:100%;cursor:pointer;margin-top:4px}
+.ures{background:#dff3e4;border:1px solid var(--green);border-radius:10px;padding:12px;font-weight:700;color:var(--green-d);margin-top:12px;font-size:15px;white-space:pre-line}
+.ures.hide{display:none}
+.simchart{background:#0e1f24;border-radius:12px;padding:8px;margin-top:12px}
+/* tutorials */
+.tut{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:16px;border:2px solid rgba(27,122,140,.25)}
+.tut .vt{position:relative;padding-top:56.25%;background:#000}.tut iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.tut .tt{padding:12px 14px;font-weight:800;color:var(--teal-d)}
+/* sync */
+.synctbl{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
+.synctbl th,.synctbl td{border-bottom:1px solid #cfe3e5;padding:8px 6px;text-align:center}.synctbl th{color:var(--muted);font-size:11px}
+.synctbl td.n{text-align:left;font-weight:700;color:var(--teal-d)}.diff{color:var(--red);font-weight:800}.same{color:var(--green-d)}
+.syncbtns{display:flex;gap:10px;flex-wrap:wrap}.syncbtns button{flex:1;min-width:150px;border:none;border-radius:12px;padding:14px;font-weight:800;color:#fff;cursor:pointer}.syncbtns .a{background:var(--teal)}.syncbtns .b{background:var(--teal-d)}
+/* nav */
+nav{position:fixed;bottom:0;left:0;right:0;background:#eef4f5;display:flex;box-shadow:0 -2px 10px rgba(0,0,0,.08);z-index:6}
+nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-weight:800;color:var(--muted);cursor:pointer;position:relative}nav button.on{color:var(--teal)}nav button.on::after{content:"";position:absolute;top:0;left:20%;right:20%;height:3px;background:var(--teal);border-radius:0 0 3px 3px}nav button .lk{font-size:11px}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--teal-d);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:40}.toast.show{opacity:1}
+/* login */
+.login{position:fixed;inset:0;background:linear-gradient(160deg,var(--bg1),var(--bg2));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:50;padding:24px;overflow-y:auto}
+.login .sxg{height:50px;margin-top:10px}.login img.acg{height:34px}
+.login .box{background:#fff;border-radius:18px;padding:20px;width:100%;max-width:360px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+.login h2{margin:0 0 4px;color:var(--teal-d);font-size:18px;text-align:center}
+.login p.sub{margin:0 0 16px;color:var(--muted);font-size:13px;text-align:center}
+.login input{width:100%;border:2px solid #b9d6da;border-radius:12px;padding:13px;font-size:16px;font-weight:700;margin-bottom:10px}
+.login .primary{width:100%;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:800;color:#fff;background:var(--teal);cursor:pointer;margin-bottom:8px}
+.login .ghost{width:100%;border:2px solid var(--teal);border-radius:12px;padding:13px;font-size:15px;font-weight:800;color:var(--teal-d);background:none;cursor:pointer;margin-bottom:8px}
+.login .guest{width:100%;border:none;background:none;color:var(--muted);font-weight:700;font-size:14px;cursor:pointer;text-decoration:underline;padding:8px}
+.login .warn{background:#fde2e2;color:#9a2b2b;border:1px solid #f0b4b4;border-radius:10px;padding:10px;font-size:12px;font-weight:600;margin-top:8px;display:none}
+/* qr modal */
+.qrm{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:60;padding:20px}
+.qrm video{width:100%;max-width:340px;border-radius:16px;background:#000}
+.qrm .cap{color:#fff;font-weight:700}.qrm .close{border:none;background:#fff;color:var(--ink);border-radius:12px;padding:12px 24px;font-weight:800;cursor:pointer}
+</style></head><body>
+<!-- LOGIN -->
+<div class="login" id="login">
+  <img class="sxg" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTg5IiB6b29tQW5kUGFuPSJtYWduaWZ5IiB2aWV3Qm94PSIwIDAgMTQxLjc1IDMxLjUiIGhlaWdodD0iNDIiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZlcnNpb249IjEuMCI+PGRlZnM+PGNsaXBQYXRoIGlkPSI3ZmEzYTIxODI4Ij48cGF0aCBkPSJNIDAuOTg0Mzc1IDYgTCAxNDAuNTE5NTMxIDYgTCAxNDAuNTE5NTMxIDI0IEwgMC45ODQzNzUgMjQgWiBNIDAuOTg0Mzc1IDYgIiBjbGlwLXJ1bGU9Im5vbnplcm8iLz48L2NsaXBQYXRoPjxjbGlwUGF0aCBpZD0iZDEzZDQyOWZkYSI+PHBhdGggZD0iTSAzIDAuODc4OTA2IEwgMTM5IDAuODc4OTA2IEwgMTM5IDE3Ljg1OTM3NSBMIDMgMTcuODU5Mzc1IFogTSAzIDAuODc4OTA2ICIgY2xpcC1ydWxlPSJub256ZXJvIi8+PC9jbGlwUGF0aD48Y2xpcFBhdGggaWQ9ImExMWYxNDc4NTQiPjxyZWN0IHg9IjAiIHdpZHRoPSIxNDEiIHk9IjAiIGhlaWdodD0iMTgiLz48L2NsaXBQYXRoPjwvZGVmcz48ZyBjbGlwLXBhdGg9InVybCgjN2ZhM2EyMTgyOCkiPjxnIHRyYW5zZm9ybT0ibWF0cml4KDEsIDAsIDAsIDEsIDAsIDYpIj48ZyBjbGlwLXBhdGg9InVybCgjYTExZjE0Nzg1NCkiPjxnIGNsaXAtcGF0aD0idXJsKCNkMTNkNDI5ZmRhKSI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTSAxMS4yNzM0MzggMTMuMDUwNzgxIEwgMyAxMy4wNTA3ODEgTCAzIDE1LjMyNDIxOSBMIDE0LjQ1MzEyNSAxNS4zMjQyMTkgQyAxNi41NjI1IDE1LjMyNDIxOSAxNy42MTMyODEgMTQuNTExNzE5IDE3LjYxMzI4MSAxMi44OTA2MjUgTCAxNy42MTMyODEgMTAuODAwNzgxIEMgMTcuNjEzMjgxIDkuMDc4MTI1IDE2LjQ0NTMxMiA4LjIxODc1IDE0LjEyMTA5NCA4LjIxODc1IEwgNi4zNzUgOC4yMTg3NSBDIDUuNjEzMjgxIDguMjE4NzUgNS4yMjI2NTYgOC4wMTU2MjUgNS4yMjI2NTYgNy42MTcxODggTCA1LjIyMjY1NiA2LjM5NDUzMSBDIDUuMjIyNjU2IDUuOTI1NzgxIDUuNjA5Mzc1IDUuNjg3NSA2LjM3NSA1LjY4NzUgTCAxNy42MTMyODEgNS42ODc1IEwgMTcuNjEzMjgxIDMuNDEwMTU2IEwgNi4xNzU3ODEgMy40MTAxNTYgQyA0LjA2MjUgMy40MTAxNTYgMyA0LjI0NjA5NCAzIDUuODk4NDM4IEwgMyA3LjgwNDY4OCBDIDMgOS42MDkzNzUgNC4xMjg5MDYgMTAuNTE5NTMxIDYuMzc4OTA2IDEwLjUxOTUzMSBMIDE0LjEyNSAxMC41MTk1MzEgQyAxNC45MDYyNSAxMC41MTk1MzEgMTUuMzAwNzgxIDEwLjcyMjY1NiAxNS4zMDA3ODEgMTEuMTE3MTg4IEwgMTUuMzAwNzgxIDEyLjM3ODkwNiBDIDE1LjMwMDc4MSAxMi44MjAzMTIgMTQuOTAyMzQ0IDEzLjA1MDc4MSAxNC4xMjUgMTMuMDUwNzgxIFogTSAzNS4wODIwMzEgMTAuNDk2MDk0IEwgMjUuNzQyMTg4IDEwLjQ5NjA5NCBMIDI1Ljc0MjE4OCAxNS4zMjQyMTkgTCAyMy41MTk1MzEgMTUuMzI0MjE5IEwgMjMuNTE5NTMxIDguMjE4NzUgTCAzNC42NDQ1MzEgOC4yMTg3NSBDIDM1LjQyNTc4MSA4LjIxODc1IDM1LjgyMDMxMiA4LjAxNTYyNSAzNS44MjAzMTIgNy42MTcxODggTCAzNS44MjAzMTIgNi4zOTQ1MzEgQyAzNS44MjAzMTIgNS45MjU3ODEgMzUuNDIxODc1IDUuNjg3NSAzNC42NDQ1MzEgNS42ODc1IEwgMjMuNTE5NTMxIDUuNjg3NSBMIDIzLjUxOTUzMSAzLjQxMDE1NiBMIDM0Ljk2ODc1IDMuNDEwMTU2IEMgMzcuMDkzNzUgMy40MTAxNTYgMzguMTc5Njg4IDQuMjM4MjgxIDM4LjE3OTY4OCA1Ljg3NSBMIDM4LjE3OTY4OCA4LjA3ODEyNSBDIDM4LjE3OTY4OCA5LjY1NjI1IDM3LjE0MDYyNSAxMC40OTYwOTQgMzUuMDgyMDMxIDEwLjQ5NjA5NCBaIE0gNDYuMjYxNzE5IDguMjY5NTMxIEwgNDYuMjYxNzE5IDE1LjMyNDIxOSBMIDQ0LjAzOTA2MiAxNS4zMjQyMTkgTCA0NC4wMzkwNjIgMy40MTAxNTYgTCA0Ni4yNjE3MTkgMy40MTAxNTYgWiBNIDY0LjQ0MTQwNiAxNS4zMjQyMTkgTCA2NC40NDE0MDYgNi4zOTQ1MzEgQyA2NC40NDE0MDYgNS45MjU3ODEgNjQuMDQyOTY5IDUuNjg3NSA2My4yNjU2MjUgNS42ODc1IEwgNTUuNTE1NjI1IDUuNjg3NSBDIDU0Ljc1MzkwNiA1LjY4NzUgNTQuMzYzMjgxIDUuOTI5Njg4IDU0LjM2MzI4MSA2LjM5NDUzMSBMIDU0LjM2MzI4MSAxNS4zMjQyMTkgTCA1Mi4wOTM3NSAxNS4zMjQyMTkgTCA1Mi4wOTM3NSA1Ljg5ODQzOCBDIDUyLjA5Mzc1IDQuMjQyMTg4IDUzLjE1MjM0NCAzLjQxMDE1NiA1NS4yNjk1MzEgMy40MTAxNTYgTCA2My41NDY4NzUgMy40MTAxNTYgQyA2NS42NTYyNSAzLjQxMDE1NiA2Ni43MDcwMzEgNC4yNDYwOTQgNjYuNzA3MDMxIDUuODk4NDM4IEwgNjYuNzA3MDMxIDE1LjMyNDIxOSBaIE0gMTA1LjMzOTg0NCAxNC40NTMxMjUgTCAxMDUuMzM5ODQ0IDQuMzQzNzUgTCAxMDYuNTYyNSA0LjM0Mzc1IEwgMTA2LjU2MjUgMTMuMzM5ODQ0IEwgMTExLjMxMjUgMTMuMzM5ODQ0IEwgMTExLjMxMjUgMTQuNDUzMTI1IFogTSAxMTYuMTE3MTg4IDE0LjQ1MzEyNSBMIDExNi4xMTcxODggNy4yMzA0NjkgTCAxMTcuMjY5NTMxIDcuMjMwNDY5IEwgMTE3LjI2OTUzMSAxNC40NTMxMjUgWiBNIDExNi43MDcwMzEgNS41NTQ2ODggQyAxMTYuNTE1NjI1IDUuNTU0Njg4IDExNi4zNDc2NTYgNS40ODQzNzUgMTE2LjIwMzEyNSA1LjMzOTg0NCBDIDExNi4wNTg1OTQgNS4xOTUzMTIgMTE1Ljk4ODI4MSA1LjAyNzM0NCAxMTUuOTg4MjgxIDQuODMyMDMxIEMgMTE1Ljk4ODI4MSA0LjYzMjgxMiAxMTYuMDU4NTk0IDQuNDYwOTM4IDExNi4yMDMxMjUgNC4zMjAzMTIgQyAxMTYuMzQ3NjU2IDQuMTc5Njg4IDExNi41MTU2MjUgNC4xMDkzNzUgMTE2LjcwNzAzMSA0LjEwOTM3NSBDIDExNi45MTAxNTYgNC4xMDkzNzUgMTE3LjA3ODEyNSA0LjE3OTY4OCAxMTcuMjE4NzUgNC4zMjAzMTIgQyAxMTcuMzU5Mzc1IDQuNDYwOTM4IDExNy40MjU3ODEgNC42MzI4MTIgMTE3LjQyNTc4MSA0LjgzMjAzMSBDIDExNy40MjU3ODEgNS4wMjczNDQgMTE3LjM1OTM3NSA1LjE5NTMxMiAxMTcuMjE4NzUgNS4zMzk4NDQgQyAxMTcuMDc4MTI1IDUuNDg0Mzc1IDExNi45MTAxNTYgNS41NTQ2ODggMTE2LjcwNzAzMSA1LjU1NDY4OCBaIE0gMTI1LjY0NDUzMSAxNC42MjUgQyAxMjQuOTQxNDA2IDE0LjYyNSAxMjQuNDAyMzQ0IDE0LjQ0NTMxMiAxMjQuMDE1NjI1IDE0LjA3ODEyNSBDIDEyMy42MzI4MTIgMTMuNzEwOTM4IDEyMy40NDE0MDYgMTMuMTk1MzEyIDEyMy40NDE0MDYgMTIuNTMxMjUgTCAxMjMuNDQxNDA2IDguMjU3ODEyIEwgMTIyLjE5MTQwNiA4LjI1NzgxMiBMIDEyMi4xOTE0MDYgNy4yMzA0NjkgTCAxMjMuNDQxNDA2IDcuMjMwNDY5IEwgMTIzLjQ0MTQwNiA0Ljk3NjU2MiBMIDEyNC41OTM3NSA0Ljk3NjU2MiBMIDEyNC41OTM3NSA3LjIzMDQ2OSBMIDEyNi43NSA3LjIzMDQ2OSBMIDEyNi43NSA4LjI1NzgxMiBMIDEyNC41OTM3NSA4LjI1NzgxMiBMIDEyNC41OTM3NSAxMi40MTc5NjkgQyAxMjQuNTkzNzUgMTIuNzgxMjUgMTI0LjY5MTQwNiAxMy4wNjI1IDEyNC44ODY3MTkgMTMuMjYxNzE5IEMgMTI1LjA4NTkzOCAxMy40NjA5MzggMTI1LjM1OTM3NSAxMy41NTg1OTQgMTI1LjcxNDg0NCAxMy41NTg1OTQgQyAxMjUuODMyMDMxIDEzLjU1ODU5NCAxMjUuOTQxNDA2IDEzLjUzOTA2MiAxMjYuMDU0Njg4IDEzLjUwNzgxMiBDIDEyNi4xNjQwNjIgMTMuNDcyNjU2IDEyNi4zMDg1OTQgMTMuMzkwNjI1IDEyNi40OTIxODggMTMuMjUzOTA2IEwgMTI2LjkzNzUgMTQuMTk1MzEyIEMgMTI2LjY4NzUgMTQuMzU1NDY5IDEyNi40NjQ4NDQgMTQuNDY4NzUgMTI2LjI2MTcxOSAxNC41MzEyNSBDIDEyNi4wNjI1IDE0LjU5Mzc1IDEyNS44NTU0NjkgMTQuNjI1IDEyNS42NDQ1MzEgMTQuNjI1IFogTSAxMzUuMDgyMDMxIDE0LjYyNSBDIDEzNC4zODI4MTIgMTQuNjI1IDEzMy43NjU2MjUgMTQuNDY0ODQ0IDEzMy4yMjY1NjIgMTQuMTQ0NTMxIEMgMTMyLjY4NzUgMTMuODIwMzEyIDEzMi4yNjk1MzEgMTMuMzc1IDEzMS45Njg3NSAxMi44MDg1OTQgQyAxMzEuNjY0MDYyIDEyLjIzODI4MSAxMzEuNTE1NjI1IDExLjU4MjAzMSAxMzEuNTE1NjI1IDEwLjg0Mzc1IEMgMTMxLjUxNTYyNSAxMC4xMDE1NjIgMTMxLjY2NDA2MiA5LjQ0NTMxMiAxMzEuOTY4NzUgOC44Nzg5MDYgQyAxMzIuMjY5NTMxIDguMzA4NTk0IDEzMi42ODc1IDcuODYzMjgxIDEzMy4yMTg3NSA3LjU0Mjk2OSBDIDEzMy43NSA3LjIxODc1IDEzNC4zNjMyODEgNy4wNTg1OTQgMTM1LjA1NDY4OCA3LjA1ODU5NCBDIDEzNS43MjY1NjIgNy4wNTg1OTQgMTM2LjMwNDY4OCA3LjIyMjY1NiAxMzYuNzk2ODc1IDcuNTU0Njg4IEMgMTM3LjI4NTE1NiA3Ljg4NjcxOSAxMzcuNjY0MDYyIDguMzUxNTYyIDEzNy45MzM1OTQgOC45NDkyMTkgQyAxMzguMTk5MjE5IDkuNTQ2ODc1IDEzOC4zMzU5MzggMTAuMjUgMTM4LjMzNTkzOCAxMS4wNTg1OTQgTCAxMzIuNjc5Njg4IDExLjA1ODU5NCBDIDEzMi43MjY1NjIgMTEuODQ3NjU2IDEzMi45NzY1NjIgMTIuNDY0ODQ0IDEzMy40Mjk2ODggMTIuOTA2MjUgQyAxMzMuODc4OTA2IDEzLjM1MTU2MiAxMzQuNDQ5MjE5IDEzLjU3NDIxOSAxMzUuMTQwNjI1IDEzLjU3NDIxOSBDIDEzNS42NDg0MzggMTMuNTc0MjE5IDEzNi4wNzgxMjUgMTMuNDUzMTI1IDEzNi40Mjk2ODggMTMuMjEwOTM4IEMgMTM2Ljc3NzM0NCAxMi45Njg3NSAxMzcuMDUwNzgxIDEyLjY1MjM0NCAxMzcuMjQyMTg4IDEyLjI1NzgxMiBMIDEzOC4yMzQzNzUgMTIuNzYxNzE5IEMgMTM4LjA1MDc4MSAxMy4xNDA2MjUgMTM3LjgwODU5NCAxMy40NjQ4NDQgMTM3LjUwNzgxMiAxMy43NDYwOTQgQyAxMzcuMjA3MDMxIDE0LjAyMzQzOCAxMzYuODUxNTYyIDE0LjI0MjE4OCAxMzYuNDQxNDA2IDE0LjM5NDUzMSBDIDEzNi4wMzUxNTYgMTQuNTUwNzgxIDEzNS41ODIwMzEgMTQuNjI1IDEzNS4wODIwMzEgMTQuNjI1IFogTSAxMzIuNzY1NjI1IDEwLjA4OTg0NCBMIDEzNy4wOTc2NTYgMTAuMDg5ODQ0IEMgMTM3LjA3MDMxMiA5LjY3NTc4MSAxMzYuOTYwOTM4IDkuMzIwMzEyIDEzNi43NzM0MzggOS4wMjM0MzggQyAxMzYuNTg1OTM4IDguNzIyNjU2IDEzNi4zNDM3NSA4LjQ5MjE4OCAxMzYuMDQ2ODc1IDguMzI4MTI1IEMgMTM1Ljc1IDguMTY0MDYyIDEzNS40MTQwNjIgOC4wODIwMzEgMTM1LjAzOTA2MiA4LjA4MjAzMSBDIDEzNC42NzU3ODEgOC4wODIwMzEgMTM0LjMyNDIxOSA4LjE2NDA2MiAxMzMuOTg4MjgxIDguMzIwMzEyIEMgMTMzLjY1MjM0NCA4LjQ4MDQ2OSAxMzMuMzc1IDguNzEwOTM4IDEzMy4xNTYyNSA5LjAxNTYyNSBDIDEzMi45MzM1OTQgOS4zMTY0MDYgMTMyLjgwNDY4OCA5LjY3NTc4MSAxMzIuNzY1NjI1IDEwLjA4OTg0NCBaIE0gNzUuMjIyNjU2IDE3Ljg1OTM3NSBMIDgwLjE5NTMxMiAxNy44NTkzNzUgTCA5NS43MjI2NTYgMC44Nzg5MDYgTCA5MC45ODA0NjkgMC44Nzg5MDYgWiBNIDc2LjA5NzY1NiAwLjg3ODkwNiBMIDgyLjI4MTI1IDcuNTcwMzEyIEwgODQuNzg5MDYyIDQuODQzNzUgTCA4MS4xMjUgMC44Nzg5MDYgWiBNIDg3LjE5OTIxOSAxMi44OTQ1MzEgTCA5MS43NjE3MTkgMTcuODU5Mzc1IEwgOTYuODA4NTk0IDE3Ljg1OTM3NSBMIDg5LjY4MzU5NCAxMC4xNDg0MzggWiBNIDg3LjE5OTIxOSAxMi44OTQ1MzEgIiBmaWxsLW9wYWNpdHk9IjEiIGZpbGwtcnVsZT0ibm9uemVybyIvPjwvZz48L2c+PC9nPjwvZz48L3N2Zz4=">
+  <img class="acg" src="data:image/png;base64,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">
+  <div class="box">
+    <h2>Sign in</h2>
+    <p class="sub">Use your machine serial and password, scan the QR, or continue as guest.</p>
+    <input id="liSerial" placeholder="Machine serial (e.g. SPINX-0001)" autocomplete="off">
+    <input id="liPass" type="password" placeholder="Password">
+    <button class="primary" id="btnLogin">Sign in</button>
+    <button class="ghost" id="btnQR">Scan QR code</button>
+    <button class="guest" id="btnGuest">Continue without equipment</button>
+    <div class="warn" id="loginWarn"></div>
   </div>
+</div>
 
-  <div class="send">
-    <input id="msg" placeholder="digite um comando..." disabled>
-    <button id="btnSend" disabled>Enviar</button>
-  </div>
+<!-- QR MODAL -->
+<div class="qrm hidden" id="qrm">
+  <div class="cap">Point the camera at the QR code</div>
+  <video id="qrv" playsinline></video>
+  <button class="close" id="qrClose">Cancel</button>
+</div>
 
-  <div id="log" class="log"></div>
-  <button id="btnClr" class="clr">Limpar log</button>
+<!-- APP -->
+<header class="hdr">
+  <img class="logo-sx" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTg5IiB6b29tQW5kUGFuPSJtYWduaWZ5IiB2aWV3Qm94PSIwIDAgMTQxLjc1IDMxLjUiIGhlaWdodD0iNDIiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZlcnNpb249IjEuMCI+PGRlZnM+PGNsaXBQYXRoIGlkPSI3ZmEzYTIxODI4Ij48cGF0aCBkPSJNIDAuOTg0Mzc1IDYgTCAxNDAuNTE5NTMxIDYgTCAxNDAuNTE5NTMxIDI0IEwgMC45ODQzNzUgMjQgWiBNIDAuOTg0Mzc1IDYgIiBjbGlwLXJ1bGU9Im5vbnplcm8iLz48L2NsaXBQYXRoPjxjbGlwUGF0aCBpZD0iZDEzZDQyOWZkYSI+PHBhdGggZD0iTSAzIDAuODc4OTA2IEwgMTM5IDAuODc4OTA2IEwgMTM5IDE3Ljg1OTM3NSBMIDMgMTcuODU5Mzc1IFogTSAzIDAuODc4OTA2ICIgY2xpcC1ydWxlPSJub256ZXJvIi8+PC9jbGlwUGF0aD48Y2xpcFBhdGggaWQ9ImExMWYxNDc4NTQiPjxyZWN0IHg9IjAiIHdpZHRoPSIxNDEiIHk9IjAiIGhlaWdodD0iMTgiLz48L2NsaXBQYXRoPjwvZGVmcz48ZyBjbGlwLXBhdGg9InVybCgjN2ZhM2EyMTgyOCkiPjxnIHRyYW5zZm9ybT0ibWF0cml4KDEsIDAsIDAsIDEsIDAsIDYpIj48ZyBjbGlwLXBhdGg9InVybCgjYTExZjE0Nzg1NCkiPjxnIGNsaXAtcGF0aD0idXJsKCNkMTNkNDI5ZmRhKSI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTSAxMS4yNzM0MzggMTMuMDUwNzgxIEwgMyAxMy4wNTA3ODEgTCAzIDE1LjMyNDIxOSBMIDE0LjQ1MzEyNSAxNS4zMjQyMTkgQyAxNi41NjI1IDE1LjMyNDIxOSAxNy42MTMyODEgMTQuNTExNzE5IDE3LjYxMzI4MSAxMi44OTA2MjUgTCAxNy42MTMyODEgMTAuODAwNzgxIEMgMTcuNjEzMjgxIDkuMDc4MTI1IDE2LjQ0NTMxMiA4LjIxODc1IDE0LjEyMTA5NCA4LjIxODc1IEwgNi4zNzUgOC4yMTg3NSBDIDUuNjEzMjgxIDguMjE4NzUgNS4yMjI2NTYgOC4wMTU2MjUgNS4yMjI2NTYgNy42MTcxODggTCA1LjIyMjY1NiA2LjM5NDUzMSBDIDUuMjIyNjU2IDUuOTI1NzgxIDUuNjA5Mzc1IDUuNjg3NSA2LjM3NSA1LjY4NzUgTCAxNy42MTMyODEgNS42ODc1IEwgMTcuNjEzMjgxIDMuNDEwMTU2IEwgNi4xNzU3ODEgMy40MTAxNTYgQyA0LjA2MjUgMy40MTAxNTYgMyA0LjI0NjA5NCAzIDUuODk4NDM4IEwgMyA3LjgwNDY4OCBDIDMgOS42MDkzNzUgNC4xMjg5MDYgMTAuNTE5NTMxIDYuMzc4OTA2IDEwLjUxOTUzMSBMIDE0LjEyNSAxMC41MTk1MzEgQyAxNC45MDYyNSAxMC41MTk1MzEgMTUuMzAwNzgxIDEwLjcyMjY1NiAxNS4zMDA3ODEgMTEuMTE3MTg4IEwgMTUuMzAwNzgxIDEyLjM3ODkwNiBDIDE1LjMwMDc4MSAxMi44MjAzMTIgMTQuOTAyMzQ0IDEzLjA1MDc4MSAxNC4xMjUgMTMuMDUwNzgxIFogTSAzNS4wODIwMzEgMTAuNDk2MDk0IEwgMjUuNzQyMTg4IDEwLjQ5NjA5NCBMIDI1Ljc0MjE4OCAxNS4zMjQyMTkgTCAyMy41MTk1MzEgMTUuMzI0MjE5IEwgMjMuNTE5NTMxIDguMjE4NzUgTCAzNC42NDQ1MzEgOC4yMTg3NSBDIDM1LjQyNTc4MSA4LjIxODc1IDM1LjgyMDMxMiA4LjAxNTYyNSAzNS44MjAzMTIgNy42MTcxODggTCAzNS44MjAzMTIgNi4zOTQ1MzEgQyAzNS44MjAzMTIgNS45MjU3ODEgMzUuNDIxODc1IDUuNjg3NSAzNC42NDQ1MzEgNS42ODc1IEwgMjMuNTE5NTMxIDUuNjg3NSBMIDIzLjUxOTUzMSAzLjQxMDE1NiBMIDM0Ljk2ODc1IDMuNDEwMTU2IEMgMzcuMDkzNzUgMy40MTAxNTYgMzguMTc5Njg4IDQuMjM4MjgxIDM4LjE3OTY4OCA1Ljg3NSBMIDM4LjE3OTY4OCA4LjA3ODEyNSBDIDM4LjE3OTY4OCA5LjY1NjI1IDM3LjE0MDYyNSAxMC40OTYwOTQgMzUuMDgyMDMxIDEwLjQ5NjA5NCBaIE0gNDYuMjYxNzE5IDguMjY5NTMxIEwgNDYuMjYxNzE5IDE1LjMyNDIxOSBMIDQ0LjAzOTA2MiAxNS4zMjQyMTkgTCA0NC4wMzkwNjIgMy40MTAxNTYgTCA0Ni4yNjE3MTkgMy40MTAxNTYgWiBNIDY0LjQ0MTQwNiAxNS4zMjQyMTkgTCA2NC40NDE0MDYgNi4zOTQ1MzEgQyA2NC40NDE0MDYgNS45MjU3ODEgNjQuMDQyOTY5IDUuNjg3NSA2My4yNjU2MjUgNS42ODc1IEwgNTUuNTE1NjI1IDUuNjg3NSBDIDU0Ljc1MzkwNiA1LjY4NzUgNTQuMzYzMjgxIDUuOTI5Njg4IDU0LjM2MzI4MSA2LjM5NDUzMSBMIDU0LjM2MzI4MSAxNS4zMjQyMTkgTCA1Mi4wOTM3NSAxNS4zMjQyMTkgTCA1Mi4wOTM3NSA1Ljg5ODQzOCBDIDUyLjA5Mzc1IDQuMjQyMTg4IDUzLjE1MjM0NCAzLjQxMDE1NiA1NS4yNjk1MzEgMy40MTAxNTYgTCA2My41NDY4NzUgMy40MTAxNTYgQyA2NS42NTYyNSAzLjQxMDE1NiA2Ni43MDcwMzEgNC4yNDYwOTQgNjYuNzA3MDMxIDUuODk4NDM4IEwgNjYuNzA3MDMxIDE1LjMyNDIxOSBaIE0gMTA1LjMzOTg0NCAxNC40NTMxMjUgTCAxMDUuMzM5ODQ0IDQuMzQzNzUgTCAxMDYuNTYyNSA0LjM0Mzc1IEwgMTA2LjU2MjUgMTMuMzM5ODQ0IEwgMTExLjMxMjUgMTMuMzM5ODQ0IEwgMTExLjMxMjUgMTQuNDUzMTI1IFogTSAxMTYuMTE3MTg4IDE0LjQ1MzEyNSBMIDExNi4xMTcxODggNy4yMzA0NjkgTCAxMTcuMjY5NTMxIDcuMjMwNDY5IEwgMTE3LjI2OTUzMSAxNC40NTMxMjUgWiBNIDExNi43MDcwMzEgNS41NTQ2ODggQyAxMTYuNTE1NjI1IDUuNTU0Njg4IDExNi4zNDc2NTYgNS40ODQzNzUgMTE2LjIwMzEyNSA1LjMzOTg0NCBDIDExNi4wNTg1OTQgNS4xOTUzMTIgMTE1Ljk4ODI4MSA1LjAyNzM0NCAxMTUuOTg4MjgxIDQuODMyMDMxIEMgMTE1Ljk4ODI4MSA0LjYzMjgxMiAxMTYuMDU4NTk0IDQuNDYwOTM4IDExNi4yMDMxMjUgNC4zMjAzMTIgQyAxMTYuMzQ3NjU2IDQuMTc5Njg4IDExNi41MTU2MjUgNC4xMDkzNzUgMTE2LjcwNzAzMSA0LjEwOTM3NSBDIDExNi45MTAxNTYgNC4xMDkzNzUgMTE3LjA3ODEyNSA0LjE3OTY4OCAxMTcuMjE4NzUgNC4zMjAzMTIgQyAxMTcuMzU5Mzc1IDQuNDYwOTM4IDExNy40MjU3ODEgNC42MzI4MTIgMTE3LjQyNTc4MSA0LjgzMjAzMSBDIDExNy40MjU3ODEgNS4wMjczNDQgMTE3LjM1OTM3NSA1LjE5NTMxMiAxMTcuMjE4NzUgNS4zMzk4NDQgQyAxMTcuMDc4MTI1IDUuNDg0Mzc1IDExNi45MTAxNTYgNS41NTQ2ODggMTE2LjcwNzAzMSA1LjU1NDY4OCBaIE0gMTI1LjY0NDUzMSAxNC42MjUgQyAxMjQuOTQxNDA2IDE0LjYyNSAxMjQuNDAyMzQ0IDE0LjQ0NTMxMiAxMjQuMDE1NjI1IDE0LjA3ODEyNSBDIDEyMy42MzI4MTIgMTMuNzEwOTM4IDEyMy40NDE0MDYgMTMuMTk1MzEyIDEyMy40NDE0MDYgMTIuNTMxMjUgTCAxMjMuNDQxNDA2IDguMjU3ODEyIEwgMTIyLjE5MTQwNiA4LjI1NzgxMiBMIDEyMi4xOTE0MDYgNy4yMzA0NjkgTCAxMjMuNDQxNDA2IDcuMjMwNDY5IEwgMTIzLjQ0MTQwNiA0Ljk3NjU2MiBMIDEyNC41OTM3NSA0Ljk3NjU2MiBMIDEyNC41OTM3NSA3LjIzMDQ2OSBMIDEyNi43NSA3LjIzMDQ2OSBMIDEyNi43NSA4LjI1NzgxMiBMIDEyNC41OTM3NSA4LjI1NzgxMiBMIDEyNC41OTM3NSAxMi40MTc5NjkgQyAxMjQuNTkzNzUgMTIuNzgxMjUgMTI0LjY5MTQwNiAxMy4wNjI1IDEyNC44ODY3MTkgMTMuMjYxNzE5IEMgMTI1LjA4NTkzOCAxMy40NjA5MzggMTI1LjM1OTM3NSAxMy41NTg1OTQgMTI1LjcxNDg0NCAxMy41NTg1OTQgQyAxMjUuODMyMDMxIDEzLjU1ODU5NCAxMjUuOTQxNDA2IDEzLjUzOTA2MiAxMjYuMDU0Njg4IDEzLjUwNzgxMiBDIDEyNi4xNjQwNjIgMTMuNDcyNjU2IDEyNi4zMDg1OTQgMTMuMzkwNjI1IDEyNi40OTIxODggMTMuMjUzOTA2IEwgMTI2LjkzNzUgMTQuMTk1MzEyIEMgMTI2LjY4NzUgMTQuMzU1NDY5IDEyNi40NjQ4NDQgMTQuNDY4NzUgMTI2LjI2MTcxOSAxNC41MzEyNSBDIDEyNi4wNjI1IDE0LjU5Mzc1IDEyNS44NTU0NjkgMTQuNjI1IDEyNS42NDQ1MzEgMTQuNjI1IFogTSAxMzUuMDgyMDMxIDE0LjYyNSBDIDEzNC4zODI4MTIgMTQuNjI1IDEzMy43NjU2MjUgMTQuNDY0ODQ0IDEzMy4yMjY1NjIgMTQuMTQ0NTMxIEMgMTMyLjY4NzUgMTMuODIwMzEyIDEzMi4yNjk1MzEgMTMuMzc1IDEzMS45Njg3NSAxMi44MDg1OTQgQyAxMzEuNjY0MDYyIDEyLjIzODI4MSAxMzEuNTE1NjI1IDExLjU4MjAzMSAxMzEuNTE1NjI1IDEwLjg0Mzc1IEMgMTMxLjUxNTYyNSAxMC4xMDE1NjIgMTMxLjY2NDA2MiA5LjQ0NTMxMiAxMzEuOTY4NzUgOC44Nzg5MDYgQyAxMzIuMjY5NTMxIDguMzA4NTk0IDEzMi42ODc1IDcuODYzMjgxIDEzMy4yMTg3NSA3LjU0Mjk2OSBDIDEzMy43NSA3LjIxODc1IDEzNC4zNjMyODEgNy4wNTg1OTQgMTM1LjA1NDY4OCA3LjA1ODU5NCBDIDEzNS43MjY1NjIgNy4wNTg1OTQgMTM2LjMwNDY4OCA3LjIyMjY1NiAxMzYuNzk2ODc1IDcuNTU0Njg4IEMgMTM3LjI4NTE1NiA3Ljg4NjcxOSAxMzcuNjY0MDYyIDguMzUxNTYyIDEzNy45MzM1OTQgOC45NDkyMTkgQyAxMzguMTk5MjE5IDkuNTQ2ODc1IDEzOC4zMzU5MzggMTAuMjUgMTM4LjMzNTkzOCAxMS4wNTg1OTQgTCAxMzIuNjc5Njg4IDExLjA1ODU5NCBDIDEzMi43MjY1NjIgMTEuODQ3NjU2IDEzMi45NzY1NjIgMTIuNDY0ODQ0IDEzMy40Mjk2ODggMTIuOTA2MjUgQyAxMzMuODc4OTA2IDEzLjM1MTU2MiAxMzQuNDQ5MjE5IDEzLjU3NDIxOSAxMzUuMTQwNjI1IDEzLjU3NDIxOSBDIDEzNS42NDg0MzggMTMuNTc0MjE5IDEzNi4wNzgxMjUgMTMuNDUzMTI1IDEzNi40Mjk2ODggMTMuMjEwOTM4IEMgMTM2Ljc3NzM0NCAxMi45Njg3NSAxMzcuMDUwNzgxIDEyLjY1MjM0NCAxMzcuMjQyMTg4IDEyLjI1NzgxMiBMIDEzOC4yMzQzNzUgMTIuNzYxNzE5IEMgMTM4LjA1MDc4MSAxMy4xNDA2MjUgMTM3LjgwODU5NCAxMy40NjQ4NDQgMTM3LjUwNzgxMiAxMy43NDYwOTQgQyAxMzcuMjA3MDMxIDE0LjAyMzQzOCAxMzYuODUxNTYyIDE0LjI0MjE4OCAxMzYuNDQxNDA2IDE0LjM5NDUzMSBDIDEzNi4wMzUxNTYgMTQuNTUwNzgxIDEzNS41ODIwMzEgMTQuNjI1IDEzNS4wODIwMzEgMTQuNjI1IFogTSAxMzIuNzY1NjI1IDEwLjA4OTg0NCBMIDEzNy4wOTc2NTYgMTAuMDg5ODQ0IEMgMTM3LjA3MDMxMiA5LjY3NTc4MSAxMzYuOTYwOTM4IDkuMzIwMzEyIDEzNi43NzM0MzggOS4wMjM0MzggQyAxMzYuNTg1OTM4IDguNzIyNjU2IDEzNi4zNDM3NSA4LjQ5MjE4OCAxMzYuMDQ2ODc1IDguMzI4MTI1IEMgMTM1Ljc1IDguMTY0MDYyIDEzNS40MTQwNjIgOC4wODIwMzEgMTM1LjAzOTA2MiA4LjA4MjAzMSBDIDEzNC42NzU3ODEgOC4wODIwMzEgMTM0LjMyNDIxOSA4LjE2NDA2MiAxMzMuOTg4MjgxIDguMzIwMzEyIEMgMTMzLjY1MjM0NCA4LjQ4MDQ2OSAxMzMuMzc1IDguNzEwOTM4IDEzMy4xNTYyNSA5LjAxNTYyNSBDIDEzMi45MzM1OTQgOS4zMTY0MDYgMTMyLjgwNDY4OCA5LjY3NTc4MSAxMzIuNzY1NjI1IDEwLjA4OTg0NCBaIE0gNzUuMjIyNjU2IDE3Ljg1OTM3NSBMIDgwLjE5NTMxMiAxNy44NTkzNzUgTCA5NS43MjI2NTYgMC44Nzg5MDYgTCA5MC45ODA0NjkgMC44Nzg5MDYgWiBNIDc2LjA5NzY1NiAwLjg3ODkwNiBMIDgyLjI4MTI1IDcuNTcwMzEyIEwgODQuNzg5MDYyIDQuODQzNzUgTCA4MS4xMjUgMC44Nzg5MDYgWiBNIDg3LjE5OTIxOSAxMi44OTQ1MzEgTCA5MS43NjE3MTkgMTcuODU5Mzc1IEwgOTYuODA4NTk0IDE3Ljg1OTM3NSBMIDg5LjY4MzU5NCAxMC4xNDg0MzggWiBNIDg3LjE5OTIxOSAxMi44OTQ1MzEgIiBmaWxsLW9wYWNpdHk9IjEiIGZpbGwtcnVsZT0ibm9uemVybyIvPjwvZz48L2c+PC9nPjwvZz48L3N2Zz4=">
+  <div class="name" id="recName">-</div>
+  <div class="badge" id="statusBadge">-</div>
+  <button class="menubtn" id="menuBtn">&#9776;</button>
+  <div class="menu hidden" id="menu"></div>
+</header>
 
+<main>
+  <!-- CONTROL -->
+  <section id="view-control">
+    <div class="hero"><img src="data:image/png;base64,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"></div>
+    <div class="note" id="ctrlNote">Equipment control connects over Bluetooth (integration step). Preview below uses your saved recipe.</div>
+    <div class="vacrow"><button class="vacbtn" id="btnVac" disabled>VACUUM</button></div>
+    <div class="readouts">
+      <div class="ro"><div class="lab">SPEED</div><div class="val" id="rSpeed">0</div><div class="unit">RPM</div></div>
+      <div class="ro"><div class="lab">ACCEL</div><div class="val" id="rAccel">0</div><div class="unit">RPM/s</div></div>
+      <div class="ro"><div class="lab">TIME</div><div class="val" id="rTime">0</div><div class="unit">Sec</div></div>
+    </div>
+    <div class="actions"><button class="big start" id="btnStart" disabled>START</button><button class="big stop" id="btnStop" disabled>STOP</button></div>
+  </section>
+
+  <!-- RECIPES -->
+  <section id="view-recipes" class="hidden"><h2 class="sec">Recipes</h2><div class="grid" id="recGrid"></div></section>
+
+  <!-- EDITOR -->
+  <section id="view-editor" class="hidden">
+    <h2 class="sec">Edit recipe</h2>
+    <div class="edname"><input id="edName" maxlength="16" placeholder="RECIPE NAME"></div>
+    <div class="tabs" id="edTabs"></div>
+    <div class="stepbtns"><button id="delStep">- step</button><button id="addStep">+ step</button></div>
+    <div class="field"><div class="fl">SPEED<small>RPM</small></div><div class="stepper"><button data-f="speed" data-d="-1">-</button><input id="edSpeed" type="number" inputmode="numeric"><button data-f="speed" data-d="1">+</button></div></div>
+    <div class="field"><div class="fl">ACCEL<small>RPM/s</small></div><div class="stepper"><button data-f="accel" data-d="-1">-</button><input id="edAccel" type="number" inputmode="numeric"><button data-f="accel" data-d="1">+</button></div></div>
+    <div class="field"><div class="fl">TIME<small>Sec</small></div><div class="stepper"><button data-f="time" data-d="-1">-</button><input id="edTime" type="number" inputmode="numeric"><button data-f="time" data-d="1">+</button></div></div>
+    <div class="edactions"><button class="back" id="edBack">BACK</button><button class="save" id="edSave">SAVE</button></div>
+  </section>
+
+  <!-- TUTORIALS -->
+  <section id="view-tutorials" class="hidden"><h2 class="sec">Tutorials</h2><div id="tutList"></div></section>
+
+  <!-- UTILITIES -->
+  <section id="view-utils" class="hidden"><h2 class="sec">Utilities</h2>
+
+    <div class="util">
+      <h3>Spin process simulator</h3>
+      <div class="desc">Curve of RPM over time for the selected recipe (ramp + plateau + final brake).</div>
+      <div class="urow"><label>Recipe</label><select id="simRecipe"></select></div>
+      <div id="simChart" class="simchart"></div>
+      <div class="ures hide" id="simRes"></div>
+    </div>
+
+    <div class="util">
+      <h3>Film thickness estimator</h3>
+      <div class="desc">Approximate: thickness is proportional to 1/&#8730;rpm. Calibrate with one known point.</div>
+      <div class="urow"><label>Known speed (rpm)</label><input id="thR0" type="number" value="2000"></div>
+      <div class="urow"><label>Known thickness (nm)</label><input id="thH0" type="number" value="500"></div>
+      <div class="urow"><label>Target speed (rpm)</label><input id="thR1" type="number" value="3000"></div>
+      <button class="ubtn" id="thGo">Estimate</button>
+      <div class="ures hide" id="thRes"></div>
+    </div>
+
+    <div class="util">
+      <h3>Dilution (C1&#183;V1 = C2&#183;V2)</h3>
+      <div class="desc">How much stock and solvent to reach a target concentration and volume.</div>
+      <div class="urow"><label>Stock conc. C1</label><input id="dC1" type="number" value="1"></div>
+      <div class="urow"><label>Target conc. C2</label><input id="dC2" type="number" value="0.1"></div>
+      <div class="urow"><label>Final volume V2 (mL)</label><input id="dV2" type="number" value="10"></div>
+      <button class="ubtn" id="dGo">Calculate</button>
+      <div class="ures hide" id="dRes"></div>
+    </div>
+
+    <div class="util">
+      <h3>Solution prep (mass)</h3>
+      <div class="desc">Mass of solute for a target molarity, or for a %m/v.</div>
+      <div class="urow"><label>Molarity (mol/L)</label><input id="sM" type="number" value="0.5"></div>
+      <div class="urow"><label>Volume (mL)</label><input id="sV" type="number" value="100"></div>
+      <div class="urow"><label>Molar mass (g/mol)</label><input id="sMM" type="number" value="58.44"></div>
+      <button class="ubtn" id="sGo">Calculate</button>
+      <div class="ures hide" id="sRes"></div>
+    </div>
+  </section>
+
+  <!-- SYNC -->
+  <section id="view-sync" class="hidden"><h2 class="sec">Data sync</h2>
+    <div class="note">Compares the recipes in this browser with the remote database. The equipment column fills in once Bluetooth is connected (integration step).</div>
+    <div id="syncBody"></div>
+    <div class="syncbtns">
+      <button class="a" id="pushRemote">Push browser &rarr; remote</button>
+      <button class="b" id="pullRemote">Pull remote &rarr; browser</button>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button id="nav-control" class="on" data-view="control">Control</button>
+  <button id="nav-recipes" data-view="recipes">Recipes</button>
+</nav>
+<div class="toast" id="toast"></div>
 <script>
 "use strict";
-// UUIDs devem bater com o .ino (aqui em minusculo, exigencia do Web Bluetooth)
-const SVC = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-const RX  = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // WRITE  (celular -> ESP)
-const TX  = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // NOTIFY (ESP -> celular)
+const LIM={speed:{max:6500,step:50},accel:{max:4000,step:10},time:{max:1000,step:1}};
+const $=id=>document.getElementById(id);
+const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1500);}
+function cr(f,v){v=Math.round(v);if(v<0)v=0;if(v>LIM[f].max)v=LIM[f].max;return v;}
 
-let device=null, rxChar=null, txChar=null;
-const $ = id => document.getElementById(id);
-const enc = new TextEncoder(), dec = new TextDecoder();
-
-function log(msg, cls){ const l=$("log"); const s=document.createElement("div"); if(cls)s.className=cls; s.textContent=msg; l.appendChild(s); l.scrollTop=l.scrollHeight; }
-function setConnected(on){
-  $("dot").classList.toggle("on",on);
-  $("stat").textContent = on ? "Conectado" : "Desconectado";
-  $("btnConn").textContent = on ? "Desconectar" : "Conectar";
-  $("btnConn").classList.toggle("dis",on);
-  ["btnOn","btnOff","btnSend","msg"].forEach(id=>$(id).disabled=!on);
-}
-
-// aviso se o navegador nao tiver Web Bluetooth (ex.: Safari puro no iPhone)
-if(!navigator.bluetooth){
-  const w=$("warn"); w.style.display="block";
-  w.textContent="Este navegador nao tem Web Bluetooth. No iPhone use o app Bluefy; no Android use o Chrome.";
-  $("btnConn").disabled=true;
-}
-
-async function connect(){
-  try{
-    log("Procurando dispositivo...", "sys");
-    device = await navigator.bluetooth.requestDevice({
-      filters:[{ namePrefix:"SPINX" }],
-      optionalServices:[SVC]
-    });
-    device.addEventListener("gattserverdisconnected", ()=>{ setConnected(false); log("** desconectado **","err"); });
-
-    log("Conectando ao GATT...", "sys");
-    const server  = await device.gatt.connect();
-    const service = await server.getPrimaryService(SVC);
-    rxChar = await service.getCharacteristic(RX);
-    txChar = await service.getCharacteristic(TX);
-
-    await txChar.startNotifications();
-    txChar.addEventListener("characteristicvaluechanged", e=>{
-      log("<= " + dec.decode(e.target.value));
-    });
-
-    setConnected(true);
-    log("Conectado a " + (device.name||"dispositivo"), "sys");
-  }catch(err){
-    log("Erro: " + err, "err");
-  }
-}
-
-async function send(text){
-  if(!rxChar || !text) return;
-  try{
-    await rxChar.writeValue(enc.encode(text));
-    log("=> " + text, "tx");
-  }catch(err){ log("Erro ao enviar: " + err, "err"); }
-}
-
-$("btnConn").onclick = ()=>{
-  if(device && device.gatt.connected){ device.gatt.disconnect(); }
-  else connect();
+/* ---------- data layer (browser = localStorage; remote/equipment plugam depois) ---------- */
+const K_REC="spinx_recipes", K_SESS="spinx_session", K_REMOTE="spinx_remote_mock";
+function defaultRecipes(){const a=[];for(let i=0;i<12;i++){a.push({index:i,name:i===0?"DEFAULT":"BLANK",activeSteps:i===0?1:0,steps:Array.from({length:6},()=>({speed:1000,accel:500,time:30})),updatedAt:0});}return a;}
+const DB={
+  recipes(){try{const d=JSON.parse(localStorage.getItem(K_REC));return d&&d.length?d:defaultRecipes();}catch(e){return defaultRecipes();}},
+  saveRecipes(r){localStorage.setItem(K_REC,JSON.stringify(r));},
+  remote(){try{return JSON.parse(localStorage.getItem(K_REMOTE))||null;}catch(e){return null;}},
+  saveRemote(r){localStorage.setItem(K_REMOTE,JSON.stringify(r));},
+  session(){try{return JSON.parse(localStorage.getItem(K_SESS));}catch(e){return null;}},
+  setSession(s){localStorage.setItem(K_SESS,JSON.stringify(s));},
+  clearSession(){localStorage.removeItem(K_SESS);}
 };
-$("btnOn").onclick  = ()=>send("ON");
-$("btnOff").onclick = ()=>send("OFF");
-$("btnSend").onclick= ()=>{ const m=$("msg"); send(m.value.trim()); m.value=""; };
-$("msg").addEventListener("keydown", e=>{ if(e.key==="Enter"){ send($("msg").value.trim()); $("msg").value=""; } });
-$("btnClr").onclick = ()=>{ $("log").innerHTML=""; };
-</script>
-</body>
-</html>
+let recipes=DB.recipes();
+let current=0, view="control", edit=null, editStep=0, session=null;
+
+/* ---------- login ---------- */
+function isGuest(){return !session || session.mode==="guest";}
+function doLogin(mode,serial){session={mode:mode,serial:serial||null,at:Date.now()};DB.setSession(session);$("login").classList.add("hidden");afterLogin();}
+function afterLogin(){
+  applyLock();
+  $("statusBadge").className="badge"+(isGuest()?" guest":"");
+  $("statusBadge").textContent=isGuest()?"GUEST":"READY";
+  showView("control");
+  renderAll();
+}
+function applyLock(){
+  const g=isGuest();
+  ["btnVac","btnStart","btnStop"].forEach(id=>$(id).disabled=true); // control real vem no BLE
+  $("ctrlNote").textContent=g
+    ? "Guest mode: equipment control and recipe editing are locked. Utilities and tutorials are available."
+    : "Equipment control connects over Bluetooth (integration step). Preview below uses your saved recipe.";
+  $("nav-recipes").innerHTML=g?"Recipes <span class='lk'>&#128274;</span>":"Recipes";
+}
+$("btnLogin").onclick=()=>{const s=$("liSerial").value.trim(),p=$("liPass").value;if(!s||!p){const w=$("loginWarn");w.style.display="block";w.textContent="Enter serial and password.";return;}
+  // aqui, na fase de integracao, validar contra o banco remoto. Por ora aceita e vincula.
+  doLogin("linked",s);toast("Signed in: "+s);};
+$("btnGuest").onclick=()=>{doLogin("guest");toast("Guest mode");};
+
+/* ---------- QR ---------- */
+let qrStream=null,qrRAF=null;
+$("btnQR").onclick=async()=>{
+  try{
+    $("qrm").classList.remove("hidden");
+    qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    const v=$("qrv");v.srcObject=qrStream;await v.play();scanQR();
+  }catch(e){$("qrm").classList.add("hidden");const w=$("loginWarn");w.style.display="block";w.textContent="Camera not available: "+e;}
+};
+$("qrClose").onclick=stopQR;
+function stopQR(){if(qrRAF)cancelAnimationFrame(qrRAF);if(qrStream)qrStream.getTracks().forEach(t=>t.stop());qrStream=null;$("qrm").classList.add("hidden");}
+function scanQR(){
+  const v=$("qrv");const cv=document.createElement("canvas");const cx=cv.getContext("2d");
+  function tick(){
+    if(!qrStream)return;
+    if(v.readyState===v.HAVE_ENOUGH_DATA&&window.jsQR){
+      cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0,cv.width,cv.height);
+      const img=cx.getImageData(0,0,cv.width,cv.height);
+      const code=window.jsQR(img.data,img.width,img.height);
+      if(code){ let serial=code.data; try{const o=JSON.parse(code.data);serial=o.serial||o.s||code.data;}catch(e){} stopQR();doLogin("linked",serial);toast("Signed in via QR: "+serial);return;}
+    }
+    qrRAF=requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+/* ---------- menu ---------- */
+function buildMenu(){
+  const g=isGuest();
+  const items=[
+    {v:"control",ic:"&#9650;",t:"Control",lock:false},
+    {v:"recipes",ic:"&#9776;",t:"Recipes",lock:g},
+    {v:"tutorials",ic:"&#9658;",t:"Tutorials",lock:false},
+    {v:"utils",ic:"&#8721;",t:"Utilities",lock:false},
+    {v:"sync",ic:"&#8646;",t:"Data sync",lock:g},
+    {sep:true},
+    {v:"logout",ic:"&#9099;",t:(g?"Exit guest":"Sign out"),lock:false}
+  ];
+  $("menu").innerHTML=items.map(it=>it.sep?'<div class="sep"></div>':
+    '<a data-menu="'+it.v+'" class="'+(it.lock?"lock":"")+'"><span class="ic">'+it.ic+'</span>'+it.t+'</a>').join("");
+  $("menu").querySelectorAll("a").forEach(a=>a.onclick=()=>{
+    const v=a.dataset.menu;$("menu").classList.add("hidden");
+    if(v==="logout"){DB.clearSession();session=null;location.reload();return;}
+    const g=isGuest();
+    if((v==="recipes"||v==="sync")&&g){toast("Sign in with equipment to use this");return;}
+    showView(v);
+  });
+}
+$("menuBtn").onclick=e=>{e.stopPropagation();buildMenu();$("menu").classList.toggle("hidden");};
+document.addEventListener("click",()=>$("menu").classList.add("hidden"));
+
+/* ---------- nav ---------- */
+function showView(v){
+  const g=isGuest();
+  if((v==="recipes"||v==="editor"||v==="sync")&&g){toast("Locked in guest mode");v="control";}
+  view=v;
+  ["control","recipes","editor","tutorials","utils","sync"].forEach(x=>$("view-"+x).classList.toggle("hidden",x!==v));
+  $("nav-control").classList.toggle("on",v==="control");
+  $("nav-recipes").classList.toggle("on",v==="recipes"||v==="editor");
+  if(v==="recipes")renderRecipes();
+  if(v==="utils")renderUtils();
+  if(v==="tutorials")renderTutorials();
+  if(v==="sync")renderSync();
+  if(v==="control")renderPreview();
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  const v=b.dataset.view;if(v==="recipes"&&isGuest()){toast("Sign in with equipment to edit recipes");return;}showView(v);
+});
+
+/* ---------- control preview ---------- */
+function renderPreview(){
+  const r=recipes[current];$("recName").textContent=r?r.name:"-";
+  const s=(r&&r.activeSteps>0)?r.steps[0]:{speed:0,accel:0,time:0};
+  $("rSpeed").textContent=s.speed;$("rAccel").textContent=s.accel;$("rTime").textContent=s.time;
+}
+
+/* ---------- recipes ---------- */
+function totalTime(r){let t=0,c=0;for(let i=0;i<r.activeSteps;i++){const s=r.steps[i];if(s.accel>0)t+=Math.abs(s.speed-c)/s.accel;t+=s.time;c=s.speed;}t+=c/1000;return Math.round(t);}
+function renderRecipes(){const g=$("recGrid");g.innerHTML="";recipes.forEach(r=>{const el=document.createElement("div");el.className="rcard"+(r.index===current?" active":"");
+  el.innerHTML='<div class="rn">'+esc(r.name)+'</div><div class="meta">Steps: '+r.activeSteps+'</div><div class="meta">Time: '+totalTime(r)+' s</div><div class="row"><button class="mini edit">Edit</button><button class="mini use'+(r.index===current?" active":"")+'">'+(r.index===current?"Active":"Use")+'</button></div>';
+  el.querySelector(".edit").onclick=()=>openEditor(r.index);
+  el.querySelector(".use").onclick=()=>{current=r.index;renderRecipes();renderPreview();toast("Active: "+r.name);};
+  g.appendChild(el);});}
+function openEditor(idx){edit=JSON.parse(JSON.stringify(recipes[idx]));if(edit.name==="BLANK")edit.name="";if(edit.activeSteps<1)edit.activeSteps=1;editStep=0;$("edName").value=edit.name;renderEditor();showView("editor");}
+function renderEditor(){const tabs=$("edTabs");tabs.innerHTML="";for(let i=0;i<6;i++){const t=document.createElement("button");t.className="tab";t.textContent=i+1;if(i<edit.activeSteps)t.classList.add("on");if(i===editStep)t.classList.add("active");t.onclick=()=>{if(i<edit.activeSteps){editStep=i;renderEditor();}};tabs.appendChild(t);}const s=edit.steps[editStep];$("edSpeed").value=s.speed;$("edAccel").value=s.accel;$("edTime").value=s.time;}
+document.querySelectorAll(".stepper button").forEach(b=>{b.onclick=()=>{const f=b.dataset.f,d=+b.dataset.d;edit.steps[editStep][f]=cr(f,edit.steps[editStep][f]+d*LIM[f].step);renderEditor();};});
+["edSpeed","edAccel","edTime"].forEach((id,i)=>{const f=["speed","accel","time"][i];$(id).onchange=e=>{edit.steps[editStep][f]=cr(f,parseInt(e.target.value)||0);renderEditor();};});
+$("addStep").onclick=()=>{if(edit.activeSteps<6){edit.activeSteps++;editStep=edit.activeSteps-1;renderEditor();}};
+$("delStep").onclick=()=>{if(edit.activeSteps>1){edit.activeSteps--;if(editStep>=edit.activeSteps)editStep=edit.activeSteps-1;renderEditor();}};
+$("edName").oninput=e=>{edit.name=e.target.value.toUpperCase();};
+$("edBack").onclick=()=>showView("recipes");
+$("edSave").onclick=()=>{edit.name=edit.name||"BLANK";edit.updatedAt=Date.now();recipes[edit.index]=JSON.parse(JSON.stringify(edit));DB.saveRecipes(recipes);toast("Recipe saved (browser)");showView("recipes");};
+
+/* ---------- tutorials ---------- */
+const TUTORIALS=[
+  {title:"Getting started with SPIN X Lite",id:"dQw4w9WgXcQ"},
+  {title:"Loading a substrate and running a recipe",id:"dQw4w9WgXcQ"},
+  {title:"Creating and editing recipes",id:"dQw4w9WgXcQ"}
+];
+function renderTutorials(){$("tutList").innerHTML=TUTORIALS.map(t=>
+  '<div class="tut"><div class="vt"><iframe src="https://www.youtube.com/embed/'+t.id+'" allowfullscreen loading="lazy"></iframe></div><div class="tt">'+esc(t.title)+'</div></div>').join("");}
+
+/* ---------- utilities ---------- */
+function renderUtils(){
+  const sel=$("simRecipe");sel.innerHTML=recipes.map(r=>'<option value="'+r.index+'">'+esc(r.name)+' ('+r.activeSteps+' steps)</option>').join("");
+  sel.value=current;drawSim();
+}
+$("simRecipe")&&($("simRecipe").onchange=drawSim);
+function simCurve(r){
+  const pts=[];let t=0,rpm=0;pts.push({t:0,rpm:0});
+  for(let i=0;i<r.activeSteps;i++){const s=r.steps[i];
+    if(s.accel>0){const dt=Math.abs(s.speed-rpm)/s.accel;t+=dt;rpm=s.speed;}else{rpm=s.speed;}
+    pts.push({t:t,rpm:rpm});
+    t+=s.time;pts.push({t:t,rpm:rpm});
+  }
+  const brake=rpm/1000;t+=brake;pts.push({t:t,rpm:0});
+  return pts;
+}
+function drawSim(){
+  const r=recipes[+$("simRecipe").value];
+  if(!r||r.activeSteps===0){$("simChart").innerHTML='<div style="color:#9fe6b0;padding:20px;text-align:center">No active steps</div>';$("simRes").className="ures hide";return;}
+  const pts=simCurve(r);const W=680,H=240,pad=34;
+  const tmax=Math.max(...pts.map(p=>p.t))||1,rmax=Math.max(...pts.map(p=>p.rpm),100);
+  const X=t=>pad+(t/tmax)*(W-2*pad),Y=v=>H-pad-(v/rmax)*(H-2*pad);
+  let poly=pts.map(p=>X(p.t).toFixed(1)+","+Y(p.rpm).toFixed(1)).join(" ");
+  let grid="";for(let i=0;i<=4;i++){const y=pad+i*(H-2*pad)/4;grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(W-pad)+'" y2="'+y+'" stroke="#1b3a42"/>';const val=Math.round(rmax*(1-i/4));grid+='<text x="4" y="'+(y+4)+'" fill="#6fae86" font-size="11">'+val+'</text>';}
+  const svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%">'+grid+
+    '<polyline points="'+poly+'" fill="none" stroke="#37BE5B" stroke-width="2.5"/>'+
+    '<text x="'+(W-pad)+'" y="'+(H-8)+'" fill="#6fae86" font-size="11" text-anchor="end">'+tmax.toFixed(1)+' s</text>'+
+    '<text x="'+pad+'" y="'+(H-8)+'" fill="#6fae86" font-size="11">0 s</text></svg>';
+  $("simChart").innerHTML=svg;
+  $("simRes").className="ures";$("simRes").textContent="Total process time: "+tmax.toFixed(1)+" s  |  peak "+rmax+" rpm";
+}
+$("thGo").onclick=()=>{const r0=+$("thR0").value,h0=+$("thH0").value,r1=+$("thR1").value;
+  if(r0<=0||r1<=0||h0<=0){toast("Enter positive values");return;}
+  const k=h0*Math.sqrt(r0);const h1=k/Math.sqrt(r1);
+  $("thRes").className="ures";$("thRes").textContent="Estimated thickness at "+r1+" rpm:\n"+h1.toFixed(1)+" nm\n(1/\u221Arpm scaling; approximation)";};
+$("dGo").onclick=()=>{const c1=+$("dC1").value,c2=+$("dC2").value,v2=+$("dV2").value;
+  if(c1<=0||c2<0||v2<=0){toast("Check values");return;}if(c2>c1){toast("Target must be < stock");return;}
+  const v1=c2*v2/c1;$("dRes").className="ures";$("dRes").textContent="Take "+v1.toFixed(2)+" mL of stock\nAdd "+(v2-v1).toFixed(2)+" mL of solvent\nFinal: "+v2+" mL at C2="+c2;};
+$("sGo").onclick=()=>{const M=+$("sM").value,V=+$("sV").value,MM=+$("sMM").value;
+  if(M<=0||V<=0||MM<=0){toast("Enter positive values");return;}
+  const mass=M*(V/1000)*MM;$("sRes").className="ures";$("sRes").textContent="Mass needed: "+mass.toFixed(3)+" g\nDissolve in solvent to "+V+" mL total.";};
+
+/* ---------- sync (navegador x remoto; equipamento vem no BLE) ---------- */
+function recipeSig(r){return r.name+"|"+r.activeSteps+"|"+r.steps.slice(0,r.activeSteps).map(s=>s.speed+","+s.accel+","+s.time).join(";");}
+function renderSync(){
+  const rem=DB.remote();
+  let rows="";let diffs=0;
+  for(let i=0;i<12;i++){
+    const b=recipes[i];const rr=rem?rem[i]:null;
+    const bs=recipeSig(b);const rs=rr?recipeSig(rr):null;
+    const same=rs!==null&&bs===rs;if(!same&&rs!==null)diffs++;
+    rows+='<tr><td class="n">'+i+' '+esc(b.name)+'</td><td>'+esc(b.name)+'</td><td>'+(rr?esc(rr.name):"&mdash;")+'</td><td>&mdash;</td><td class="'+(rs===null?"":(same?"same":"diff"))+'">'+(rs===null?"no remote":(same?"ok":"differs"))+'</td></tr>';
+  }
+  $("syncBody").innerHTML='<table class="synctbl"><tr><th>Recipe</th><th>Browser</th><th>Remote</th><th>Equipment</th><th>Status</th></tr>'+rows+'</table>'+
+    (rem?('<div class="note">'+diffs+' recipe(s) differ between browser and remote.</div>'):'<div class="note">No remote snapshot yet. Use "Push" to create one (mock). With Supabase wired, this reads/writes the real database.</div>');
+}
+$("pushRemote").onclick=()=>{DB.saveRemote(JSON.parse(JSON.stringify(recipes)));toast("Pushed to remote (mock)");renderSync();};
+$("pullRemote").onclick=()=>{const rem=DB.remote();if(!rem){toast("No remote snapshot");return;}recipes=JSON.parse(JSON.stringify(rem));DB.saveRecipes(recipes);current=Math.min(current,11);toast("Pulled from remote");renderAll();};
+
+/* ---------- boot ---------- */
+function renderAll(){renderPreview();if(view==="recipes")renderRecipes();if(view==="utils")renderUtils();if(view==="sync")renderSync();}
+(function boot(){
+  session=DB.session();
+  if(session){$("login").classList.add("hidden");afterLogin();}
+})();
+</script></body></html>
