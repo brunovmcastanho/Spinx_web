@@ -219,7 +219,7 @@ function defaultRecipes(){const a=[];for(let i=0;i<12;i++)a.push({index:i,name:i
 function padSteps(arr){const s=(arr||[]).map(x=>({speed:+x.speed||0,accel:+x.accel||0,time:+x.time||0}));while(s.length<6)s.push({speed:1000,accel:500,time:30});return s.slice(0,6);}
 function buildRecipeArray(rows){const m={};rows.forEach(r=>m[r.slot]=r);const out=[];for(let i=0;i<12;i++){const r=m[i];out.push(r?{index:i,name:r.name,activeSteps:r.active_steps,steps:padSteps(r.steps),updatedAt:new Date(r.updated_at).getTime()}:{index:i,name:i===0?"DEFAULT":"BLANK",activeSteps:0,steps:padSteps([]),updatedAt:0});}return out;}
 function recipeSig(r){return r.name+"|"+r.activeSteps+"|"+r.steps.slice(0,r.activeSteps).map(s=>s.speed+","+s.accel+","+s.time).join(";");}
-function serialToEmail(s){return s.trim().toLowerCase().replace(/[^a-z0-9._-]/g,"")+"@devices.autocoat.app";}
+function serialToEmail(s){return s.trim().toLowerCase().replace(/[^a-z0-9._-]/g,"")+"@autocoat.com.br";}
 
 /* ---------- carregar receitas do Supabase ---------- */
 async function loadRemoteRecipes(){
