@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>BLE Test - SPIN X</title>
+<style>
+  :root{--teal:#127C8E;--teal-d:#0C5F6E;--green:#37BE5B;--red:#E24C4C;--ink:#123038;--bg:#eaf4f5}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg);padding:18px;max-width:560px;margin:0 auto}
+  h1{font-size:20px;margin:6px 0 2px}
+  .sub{color:#5a6b73;font-size:13px;margin-bottom:16px}
+  .status{display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:14px}
+  .dot{width:12px;height:12px;border-radius:50%;background:#c04}.dot.on{background:var(--green)}
+  button{border:none;border-radius:12px;padding:14px 16px;font-size:16px;font-weight:800;color:#fff;cursor:pointer}
+  .primary{background:var(--teal);width:100%;margin-bottom:14px}
+  .primary.dis{background:var(--red)}
+  .row{display:flex;gap:10px;margin-bottom:12px}
+  .row button{flex:1;background:var(--teal-d)}
+  .send{display:flex;gap:10px;margin-bottom:14px}
+  .send input{flex:1;border:2px solid #b9d6da;border-radius:12px;padding:12px;font-size:16px}
+  .send button{background:var(--green);padding:12px 18px}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .log{background:#0e1f24;color:#9fe6b0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;border-radius:12px;padding:12px;height:230px;overflow:auto;white-space:pre-wrap;line-height:1.5}
+  .log .tx{color:#7fd0ff}.log .sys{color:#e6c07f}.log .err{color:#ff8b8b}
+  .clr{background:#8fb0b8;padding:8px 12px;font-size:13px;border-radius:9px;margin-top:8px}
+  .warn{background:#fde2e2;color:#9a2b2b;border:1px solid #f0b4b4;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;margin-bottom:14px;display:none}
+</style>
+</head>
+<body>
+  <h1>BLE Test &mdash; SPIN X</h1>
+  <div class="sub">ESP32-S3 via Web Bluetooth. No iPhone, abra esta pagina no app <b>Bluefy</b>.</div>
+
+  <div id="warn" class="warn"></div>
+
+  <div class="status"><span id="dot" class="dot"></span><span id="stat">Desconectado</span></div>
+
+  <button id="btnConn" class="primary">Conectar</button>
+
+  <div class="row">
+    <button id="btnOn"  disabled>LED ON</button>
+    <button id="btnOff" disabled>LED OFF</button>
+  </div>
+
+  <div class="send">
+    <input id="msg" placeholder="digite um comando..." disabled>
+    <button id="btnSend" disabled>Enviar</button>
+  </div>
+
+  <div id="log" class="log"></div>
+  <button id="btnClr" class="clr">Limpar log</button>
+
+<script>
+"use strict";
+// UUIDs devem bater com o .ino (aqui em minusculo, exigencia do Web Bluetooth)
+const SVC = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+const RX  = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // WRITE  (celular -> ESP)
+const TX  = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // NOTIFY (ESP -> celular)
+
+let device=null, rxChar=null, txChar=null;
+const $ = id => document.getElementById(id);
+const enc = new TextEncoder(), dec = new TextDecoder();
+
+function log(msg, cls){ const l=$("log"); const s=document.createElement("div"); if(cls)s.className=cls; s.textContent=msg; l.appendChild(s); l.scrollTop=l.scrollHeight; }
+function setConnected(on){
+  $("dot").classList.toggle("on",on);
+  $("stat").textContent = on ? "Conectado" : "Desconectado";
+  $("btnConn").textContent = on ? "Desconectar" : "Conectar";
+  $("btnConn").classList.toggle("dis",on);
+  ["btnOn","btnOff","btnSend","msg"].forEach(id=>$(id).disabled=!on);
+}
+
+// aviso se o navegador nao tiver Web Bluetooth (ex.: Safari puro no iPhone)
+if(!navigator.bluetooth){
+  const w=$("warn"); w.style.display="block";
+  w.textContent="Este navegador nao tem Web Bluetooth. No iPhone use o app Bluefy; no Android use o Chrome.";
+  $("btnConn").disabled=true;
+}
+
+async function connect(){
+  try{
+    log("Procurando dispositivo...", "sys");
+    device = await navigator.bluetooth.requestDevice({
+      filters:[{ namePrefix:"SPINX" }],
+      optionalServices:[SVC]
+    });
+    device.addEventListener("gattserverdisconnected", ()=>{ setConnected(false); log("** desconectado **","err"); });
+
+    log("Conectando ao GATT...", "sys");
+    const server  = await device.gatt.connect();
+    const service = await server.getPrimaryService(SVC);
+    rxChar = await service.getCharacteristic(RX);
+    txChar = await service.getCharacteristic(TX);
+
+    await txChar.startNotifications();
+    txChar.addEventListener("characteristicvaluechanged", e=>{
+      log("<= " + dec.decode(e.target.value));
+    });
+
+    setConnected(true);
+    log("Conectado a " + (device.name||"dispositivo"), "sys");
+  }catch(err){
+    log("Erro: " + err, "err");
+  }
+}
+
+async function send(text){
+  if(!rxChar || !text) return;
+  try{
+    await rxChar.writeValue(enc.encode(text));
+    log("=> " + text, "tx");
+  }catch(err){ log("Erro ao enviar: " + err, "err"); }
+}
+
+$("btnConn").onclick = ()=>{
+  if(device && device.gatt.connected){ device.gatt.disconnect(); }
+  else connect();
+};
+$("btnOn").onclick  = ()=>send("ON");
+$("btnOff").onclick = ()=>send("OFF");
+$("btnSend").onclick= ()=>{ const m=$("msg"); send(m.value.trim()); m.value=""; };
+$("msg").addEventListener("keydown", e=>{ if(e.key==="Enter"){ send($("msg").value.trim()); $("msg").value=""; } });
+$("btnClr").onclick = ()=>{ $("log").innerHTML=""; };
+</script>
+</body>
+</html>
