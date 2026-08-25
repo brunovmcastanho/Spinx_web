@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AUTOCOAT | SPIN X Lite</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script><style>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AUTOCOAT | SPIN X Lite</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
 :root{--teal:#127C8E;--teal-d:#0C5F6E;--teal-l:#2A9CB0;--bg1:#CDEAEE;--bg2:#A9D6DD;--card:#E6F5F5;--line:#1B7A8C;--green:#37BE5B;--green-d:#2AA34C;--muted:#6B7C86;--ink:#123038;--red:#E24C4C;--amber:#E9A13B;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%}
 body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--bg1),var(--bg2));display:flex;flex-direction:column;min-height:100dvh}
@@ -201,105 +201,115 @@ nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-w
 <div class="toast" id="toast"></div>
 <script>
 "use strict";
+const SB_URL="https://ailoycksqnlfokpncowj.supabase.co",SB_KEY="sb_publishable_ZF6E3ByLexscg7C-UgiN2A_p02SHcjd";
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
 const LIM={speed:{max:6500,step:50},accel:{max:4000,step:10},time:{max:1000,step:1}};
 const $=id=>document.getElementById(id);
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1500);}
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1600);}
+function warn(m){const w=$("loginWarn");w.style.display="block";w.textContent=m;}
 function cr(f,v){v=Math.round(v);if(v<0)v=0;if(v>LIM[f].max)v=LIM[f].max;return v;}
 
-/* ---------- data layer (browser = localStorage; remote/equipment plugam depois) ---------- */
-const K_REC="spinx_recipes", K_SESS="spinx_session", K_REMOTE="spinx_remote_mock";
-function defaultRecipes(){const a=[];for(let i=0;i<12;i++){a.push({index:i,name:i===0?"DEFAULT":"BLANK",activeSteps:i===0?1:0,steps:Array.from({length:6},()=>({speed:1000,accel:500,time:30})),updatedAt:0});}return a;}
-const DB={
-  recipes(){try{const d=JSON.parse(localStorage.getItem(K_REC));return d&&d.length?d:defaultRecipes();}catch(e){return defaultRecipes();}},
-  saveRecipes(r){localStorage.setItem(K_REC,JSON.stringify(r));},
-  remote(){try{return JSON.parse(localStorage.getItem(K_REMOTE))||null;}catch(e){return null;}},
-  saveRemote(r){localStorage.setItem(K_REMOTE,JSON.stringify(r));},
-  session(){try{return JSON.parse(localStorage.getItem(K_SESS));}catch(e){return null;}},
-  setSession(s){localStorage.setItem(K_SESS,JSON.stringify(s));},
-  clearSession(){localStorage.removeItem(K_SESS);}
-};
-let recipes=DB.recipes();
-let current=0, view="control", edit=null, editStep=0, session=null;
+/* ---------- estado + espelho local ---------- */
+const K_REC="spinx_recipes";
+let recipes=[],current=0,view="control",edit=null,editStep=0,session=null,eqId=null;
+function localRecipes(){try{const d=JSON.parse(localStorage.getItem(K_REC));return d&&d.length?d:null;}catch(e){return null;}}
+function saveLocal(){localStorage.setItem(K_REC,JSON.stringify(recipes));}
+function defaultRecipes(){const a=[];for(let i=0;i<12;i++)a.push({index:i,name:i===0?"DEFAULT":"BLANK",activeSteps:0,steps:padSteps([]),updatedAt:0});return a;}
+function padSteps(arr){const s=(arr||[]).map(x=>({speed:+x.speed||0,accel:+x.accel||0,time:+x.time||0}));while(s.length<6)s.push({speed:1000,accel:500,time:30});return s.slice(0,6);}
+function buildRecipeArray(rows){const m={};rows.forEach(r=>m[r.slot]=r);const out=[];for(let i=0;i<12;i++){const r=m[i];out.push(r?{index:i,name:r.name,activeSteps:r.active_steps,steps:padSteps(r.steps),updatedAt:new Date(r.updated_at).getTime()}:{index:i,name:i===0?"DEFAULT":"BLANK",activeSteps:0,steps:padSteps([]),updatedAt:0});}return out;}
+function recipeSig(r){return r.name+"|"+r.activeSteps+"|"+r.steps.slice(0,r.activeSteps).map(s=>s.speed+","+s.accel+","+s.time).join(";");}
+function serialToEmail(s){return s.trim().toLowerCase().replace(/[^a-z0-9._-]/g,"")+"@devices.autocoat.app";}
+
+/* ---------- carregar receitas do Supabase ---------- */
+async function loadRemoteRecipes(){
+  if(!eqId){recipes=localRecipes()||defaultRecipes();return;}
+  const {data,error}=await sb.from("recipes").select("*").eq("equipment_id",eqId).order("slot");
+  if(error||!data){recipes=localRecipes()||defaultRecipes();toast("Cloud read failed, using local");return;}
+  recipes=buildRecipeArray(data);saveLocal();
+}
+async function saveRecipeRemote(r){
+  if(!eqId)return;
+  const steps=r.steps.slice(0,r.activeSteps).map(s=>({speed:s.speed,accel:s.accel,time:s.time}));
+  const {error}=await sb.rpc("upsert_recipe",{p_equipment:eqId,p_slot:r.index,p_name:r.name,p_active:r.activeSteps,p_steps:steps,p_updated_at:new Date().toISOString(),p_force:true});
+  if(error)toast("Cloud save failed: "+error.message);
+}
 
 /* ---------- login ---------- */
-function isGuest(){return !session || session.mode==="guest";}
-function doLogin(mode,serial){session={mode:mode,serial:serial||null,at:Date.now()};DB.setSession(session);$("login").classList.add("hidden");afterLogin();}
+function isGuest(){return !session||session.mode==="guest";}
+async function afterAuth(){
+  const {data:{user}}=await sb.auth.getUser();
+  session={mode:"linked",userId:user?user.id:null,serial:null};
+  const {data:eqs,error}=await sb.from("equipments").select("id,serial,name").limit(1);
+  if(!error&&eqs&&eqs.length){eqId=eqs[0].id;session.serial=eqs[0].serial;}else{eqId=null;}
+  await loadRemoteRecipes();
+  $("login").classList.add("hidden");
+  afterLogin();
+  if(!eqId)toast("No equipment linked to this account");
+}
 function afterLogin(){
   applyLock();
   $("statusBadge").className="badge"+(isGuest()?" guest":"");
-  $("statusBadge").textContent=isGuest()?"GUEST":"READY";
-  showView("control");
-  renderAll();
+  $("statusBadge").textContent=isGuest()?"GUEST":(session.serial||"READY");
+  showView("control");renderAll();
 }
 function applyLock(){
   const g=isGuest();
-  ["btnVac","btnStart","btnStop"].forEach(id=>$(id).disabled=true); // control real vem no BLE
+  ["btnVac","btnStart","btnStop"].forEach(id=>$(id).disabled=true);
   $("ctrlNote").textContent=g
-    ? "Guest mode: equipment control and recipe editing are locked. Utilities and tutorials are available."
-    : "Equipment control connects over Bluetooth (integration step). Preview below uses your saved recipe.";
+    ?"Guest mode: equipment control and recipe editing are locked. Utilities and tutorials are available."
+    :"Equipment control connects over Bluetooth (integration step). Preview below uses your saved recipe.";
   $("nav-recipes").innerHTML=g?"Recipes <span class='lk'>&#128274;</span>":"Recipes";
 }
-$("btnLogin").onclick=()=>{const s=$("liSerial").value.trim(),p=$("liPass").value;if(!s||!p){const w=$("loginWarn");w.style.display="block";w.textContent="Enter serial and password.";return;}
-  // aqui, na fase de integracao, validar contra o banco remoto. Por ora aceita e vincula.
-  doLogin("linked",s);toast("Signed in: "+s);};
-$("btnGuest").onclick=()=>{doLogin("guest");toast("Guest mode");};
+$("btnLogin").onclick=async()=>{
+  const s=$("liSerial").value.trim(),p=$("liPass").value;
+  if(!s||!p){warn("Enter serial and password.");return;}
+  $("btnLogin").disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email:serialToEmail(s),password:p});
+  $("btnLogin").disabled=false;
+  if(error){warn(error.message);return;}
+  localStorage.removeItem("spinx_guest");
+  await afterAuth();toast("Signed in: "+s);
+};
+$("btnGuest").onclick=()=>{localStorage.setItem("spinx_guest","1");session={mode:"guest"};$("login").classList.add("hidden");afterLogin();toast("Guest mode");};
 
 /* ---------- QR ---------- */
 let qrStream=null,qrRAF=null;
 $("btnQR").onclick=async()=>{
-  try{
-    $("qrm").classList.remove("hidden");
-    qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
-    const v=$("qrv");v.srcObject=qrStream;await v.play();scanQR();
-  }catch(e){$("qrm").classList.add("hidden");const w=$("loginWarn");w.style.display="block";w.textContent="Camera not available: "+e;}
+  try{$("qrm").classList.remove("hidden");qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});const v=$("qrv");v.srcObject=qrStream;await v.play();scanQR();}
+  catch(e){$("qrm").classList.add("hidden");warn("Camera not available: "+e);}
 };
 $("qrClose").onclick=stopQR;
 function stopQR(){if(qrRAF)cancelAnimationFrame(qrRAF);if(qrStream)qrStream.getTracks().forEach(t=>t.stop());qrStream=null;$("qrm").classList.add("hidden");}
-function scanQR(){
-  const v=$("qrv");const cv=document.createElement("canvas");const cx=cv.getContext("2d");
-  function tick(){
-    if(!qrStream)return;
-    if(v.readyState===v.HAVE_ENOUGH_DATA&&window.jsQR){
-      cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0,cv.width,cv.height);
-      const img=cx.getImageData(0,0,cv.width,cv.height);
-      const code=window.jsQR(img.data,img.width,img.height);
-      if(code){ let serial=code.data; try{const o=JSON.parse(code.data);serial=o.serial||o.s||code.data;}catch(e){} stopQR();doLogin("linked",serial);toast("Signed in via QR: "+serial);return;}
-    }
-    qrRAF=requestAnimationFrame(tick);
-  }
-  tick();
+function scanQR(){const v=$("qrv"),cv=document.createElement("canvas"),cx=cv.getContext("2d");
+  function tick(){if(!qrStream)return;
+    if(v.readyState===v.HAVE_ENOUGH_DATA&&window.jsQR){cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0,cv.width,cv.height);const img=cx.getImageData(0,0,cv.width,cv.height);const code=window.jsQR(img.data,img.width,img.height);if(code){onQR(code.data);return;}}
+    qrRAF=requestAnimationFrame(tick);}
+  tick();}
+async function onQR(txt){
+  let serial=txt,password=null;
+  try{const o=JSON.parse(txt);serial=o.serial||o.s||txt;password=o.password||o.p||o.key||null;}catch(e){}
+  stopQR();
+  if(password){const {error}=await sb.auth.signInWithPassword({email:serialToEmail(serial),password});if(error){warn(error.message);return;}localStorage.removeItem("spinx_guest");await afterAuth();toast("Signed in via QR");}
+  else{$("liSerial").value=serial;toast("Serial filled - enter password");}
 }
 
 /* ---------- menu ---------- */
 function buildMenu(){
   const g=isGuest();
-  const items=[
-    {v:"control",ic:"&#9650;",t:"Control",lock:false},
-    {v:"recipes",ic:"&#9776;",t:"Recipes",lock:g},
-    {v:"tutorials",ic:"&#9658;",t:"Tutorials",lock:false},
-    {v:"utils",ic:"&#8721;",t:"Utilities",lock:false},
-    {v:"sync",ic:"&#8646;",t:"Data sync",lock:g},
-    {sep:true},
-    {v:"logout",ic:"&#9099;",t:(g?"Exit guest":"Sign out"),lock:false}
-  ];
-  $("menu").innerHTML=items.map(it=>it.sep?'<div class="sep"></div>':
-    '<a data-menu="'+it.v+'" class="'+(it.lock?"lock":"")+'"><span class="ic">'+it.ic+'</span>'+it.t+'</a>').join("");
-  $("menu").querySelectorAll("a").forEach(a=>a.onclick=()=>{
-    const v=a.dataset.menu;$("menu").classList.add("hidden");
-    if(v==="logout"){DB.clearSession();session=null;location.reload();return;}
-    const g=isGuest();
-    if((v==="recipes"||v==="sync")&&g){toast("Sign in with equipment to use this");return;}
-    showView(v);
-  });
+  const items=[{v:"control",ic:"&#9650;",t:"Control"},{v:"recipes",ic:"&#9776;",t:"Recipes",lock:g},{v:"tutorials",ic:"&#9658;",t:"Tutorials"},{v:"utils",ic:"&#8721;",t:"Utilities"},{v:"sync",ic:"&#8646;",t:"Data sync",lock:g},{sep:true},{v:"logout",ic:"&#9099;",t:(g?"Exit guest":"Sign out")}];
+  $("menu").innerHTML=items.map(it=>it.sep?'<div class="sep"></div>':'<a data-menu="'+it.v+'" class="'+(it.lock?"lock":"")+'"><span class="ic">'+it.ic+'</span>'+it.t+'</a>').join("");
+  $("menu").querySelectorAll("a").forEach(a=>a.onclick=async()=>{const v=a.dataset.menu;$("menu").classList.add("hidden");
+    if(v==="logout"){await sb.auth.signOut();localStorage.removeItem("spinx_guest");location.reload();return;}
+    if((v==="recipes"||v==="sync")&&isGuest()){toast("Sign in with equipment to use this");return;}
+    showView(v);});
 }
 $("menuBtn").onclick=e=>{e.stopPropagation();buildMenu();$("menu").classList.toggle("hidden");};
 document.addEventListener("click",()=>$("menu").classList.add("hidden"));
 
 /* ---------- nav ---------- */
 function showView(v){
-  const g=isGuest();
-  if((v==="recipes"||v==="editor"||v==="sync")&&g){toast("Locked in guest mode");v="control";}
+  if((v==="recipes"||v==="editor"||v==="sync")&&isGuest()){toast("Locked in guest mode");v="control";}
   view=v;
   ["control","recipes","editor","tutorials","utils","sync"].forEach(x=>$("view-"+x).classList.toggle("hidden",x!==v));
   $("nav-control").classList.toggle("on",v==="control");
@@ -310,24 +320,14 @@ function showView(v){
   if(v==="sync")renderSync();
   if(v==="control")renderPreview();
 }
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
-  const v=b.dataset.view;if(v==="recipes"&&isGuest()){toast("Sign in with equipment to edit recipes");return;}showView(v);
-});
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{const v=b.dataset.view;if(v==="recipes"&&isGuest()){toast("Sign in with equipment to edit recipes");return;}showView(v);});
 
-/* ---------- control preview ---------- */
-function renderPreview(){
-  const r=recipes[current];$("recName").textContent=r?r.name:"-";
-  const s=(r&&r.activeSteps>0)?r.steps[0]:{speed:0,accel:0,time:0};
-  $("rSpeed").textContent=s.speed;$("rAccel").textContent=s.accel;$("rTime").textContent=s.time;
-}
+/* ---------- control ---------- */
+function renderPreview(){const r=recipes[current];$("recName").textContent=r?r.name:"-";const s=(r&&r.activeSteps>0)?r.steps[0]:{speed:0,accel:0,time:0};$("rSpeed").textContent=s.speed;$("rAccel").textContent=s.accel;$("rTime").textContent=s.time;}
 
 /* ---------- recipes ---------- */
 function totalTime(r){let t=0,c=0;for(let i=0;i<r.activeSteps;i++){const s=r.steps[i];if(s.accel>0)t+=Math.abs(s.speed-c)/s.accel;t+=s.time;c=s.speed;}t+=c/1000;return Math.round(t);}
-function renderRecipes(){const g=$("recGrid");g.innerHTML="";recipes.forEach(r=>{const el=document.createElement("div");el.className="rcard"+(r.index===current?" active":"");
-  el.innerHTML='<div class="rn">'+esc(r.name)+'</div><div class="meta">Steps: '+r.activeSteps+'</div><div class="meta">Time: '+totalTime(r)+' s</div><div class="row"><button class="mini edit">Edit</button><button class="mini use'+(r.index===current?" active":"")+'">'+(r.index===current?"Active":"Use")+'</button></div>';
-  el.querySelector(".edit").onclick=()=>openEditor(r.index);
-  el.querySelector(".use").onclick=()=>{current=r.index;renderRecipes();renderPreview();toast("Active: "+r.name);};
-  g.appendChild(el);});}
+function renderRecipes(){const g=$("recGrid");g.innerHTML="";recipes.forEach(r=>{const el=document.createElement("div");el.className="rcard"+(r.index===current?" active":"");el.innerHTML='<div class="rn">'+esc(r.name)+'</div><div class="meta">Steps: '+r.activeSteps+'</div><div class="meta">Time: '+totalTime(r)+' s</div><div class="row"><button class="mini edit">Edit</button><button class="mini use'+(r.index===current?" active":"")+'">'+(r.index===current?"Active":"Use")+'</button></div>';el.querySelector(".edit").onclick=()=>openEditor(r.index);el.querySelector(".use").onclick=()=>{current=r.index;renderRecipes();renderPreview();toast("Active: "+r.name);};g.appendChild(el);});}
 function openEditor(idx){edit=JSON.parse(JSON.stringify(recipes[idx]));if(edit.name==="BLANK")edit.name="";if(edit.activeSteps<1)edit.activeSteps=1;editStep=0;$("edName").value=edit.name;renderEditor();showView("editor");}
 function renderEditor(){const tabs=$("edTabs");tabs.innerHTML="";for(let i=0;i<6;i++){const t=document.createElement("button");t.className="tab";t.textContent=i+1;if(i<edit.activeSteps)t.classList.add("on");if(i===editStep)t.classList.add("active");t.onclick=()=>{if(i<edit.activeSteps){editStep=i;renderEditor();}};tabs.appendChild(t);}const s=edit.steps[editStep];$("edSpeed").value=s.speed;$("edAccel").value=s.accel;$("edTime").value=s.time;}
 document.querySelectorAll(".stepper button").forEach(b=>{b.onclick=()=>{const f=b.dataset.f,d=+b.dataset.d;edit.steps[editStep][f]=cr(f,edit.steps[editStep][f]+d*LIM[f].step);renderEditor();};});
@@ -336,80 +336,44 @@ $("addStep").onclick=()=>{if(edit.activeSteps<6){edit.activeSteps++;editStep=edi
 $("delStep").onclick=()=>{if(edit.activeSteps>1){edit.activeSteps--;if(editStep>=edit.activeSteps)editStep=edit.activeSteps-1;renderEditor();}};
 $("edName").oninput=e=>{edit.name=e.target.value.toUpperCase();};
 $("edBack").onclick=()=>showView("recipes");
-$("edSave").onclick=()=>{edit.name=edit.name||"BLANK";edit.updatedAt=Date.now();recipes[edit.index]=JSON.parse(JSON.stringify(edit));DB.saveRecipes(recipes);toast("Recipe saved (browser)");showView("recipes");};
+$("edSave").onclick=async()=>{edit.name=edit.name||"BLANK";edit.updatedAt=Date.now();recipes[edit.index]=JSON.parse(JSON.stringify(edit));saveLocal();await saveRecipeRemote(recipes[edit.index]);toast(eqId?"Recipe saved (cloud + browser)":"Recipe saved (browser)");showView("recipes");};
 
 /* ---------- tutorials ---------- */
-const TUTORIALS=[
-  {title:"Getting started with SPIN X Lite",id:"dQw4w9WgXcQ"},
-  {title:"Loading a substrate and running a recipe",id:"dQw4w9WgXcQ"},
-  {title:"Creating and editing recipes",id:"dQw4w9WgXcQ"}
-];
-function renderTutorials(){$("tutList").innerHTML=TUTORIALS.map(t=>
-  '<div class="tut"><div class="vt"><iframe src="https://www.youtube.com/embed/'+t.id+'" allowfullscreen loading="lazy"></iframe></div><div class="tt">'+esc(t.title)+'</div></div>').join("");}
+const TUTORIALS=[{title:"Getting started with SPIN X Lite",id:"dQw4w9WgXcQ"},{title:"Loading a substrate and running a recipe",id:"dQw4w9WgXcQ"},{title:"Creating and editing recipes",id:"dQw4w9WgXcQ"}];
+function renderTutorials(){$("tutList").innerHTML=TUTORIALS.map(t=>'<div class="tut"><div class="vt"><iframe src="https://www.youtube.com/embed/'+t.id+'" allowfullscreen loading="lazy"></iframe></div><div class="tt">'+esc(t.title)+'</div></div>').join("");}
 
 /* ---------- utilities ---------- */
-function renderUtils(){
-  const sel=$("simRecipe");sel.innerHTML=recipes.map(r=>'<option value="'+r.index+'">'+esc(r.name)+' ('+r.activeSteps+' steps)</option>').join("");
-  sel.value=current;drawSim();
-}
+function renderUtils(){const sel=$("simRecipe");sel.innerHTML=recipes.map(r=>'<option value="'+r.index+'">'+esc(r.name)+' ('+r.activeSteps+' steps)</option>').join("");sel.value=current;drawSim();}
 $("simRecipe")&&($("simRecipe").onchange=drawSim);
-function simCurve(r){
-  const pts=[];let t=0,rpm=0;pts.push({t:0,rpm:0});
-  for(let i=0;i<r.activeSteps;i++){const s=r.steps[i];
-    if(s.accel>0){const dt=Math.abs(s.speed-rpm)/s.accel;t+=dt;rpm=s.speed;}else{rpm=s.speed;}
-    pts.push({t:t,rpm:rpm});
-    t+=s.time;pts.push({t:t,rpm:rpm});
-  }
-  const brake=rpm/1000;t+=brake;pts.push({t:t,rpm:0});
-  return pts;
-}
-function drawSim(){
-  const r=recipes[+$("simRecipe").value];
-  if(!r||r.activeSteps===0){$("simChart").innerHTML='<div style="color:#9fe6b0;padding:20px;text-align:center">No active steps</div>';$("simRes").className="ures hide";return;}
-  const pts=simCurve(r);const W=680,H=240,pad=34;
-  const tmax=Math.max(...pts.map(p=>p.t))||1,rmax=Math.max(...pts.map(p=>p.rpm),100);
+function simCurve(r){const pts=[{t:0,rpm:0}];let t=0,rpm=0;for(let i=0;i<r.activeSteps;i++){const s=r.steps[i];if(s.accel>0){t+=Math.abs(s.speed-rpm)/s.accel;rpm=s.speed;}else rpm=s.speed;pts.push({t:t,rpm:rpm});t+=s.time;pts.push({t:t,rpm:rpm});}t+=rpm/1000;pts.push({t:t,rpm:0});return pts;}
+function drawSim(){const r=recipes[+$("simRecipe").value];if(!r||r.activeSteps===0){$("simChart").innerHTML='<div style="color:#9fe6b0;padding:20px;text-align:center">No active steps</div>';$("simRes").className="ures hide";return;}
+  const pts=simCurve(r),W=680,H=240,pad=34,tmax=Math.max(...pts.map(p=>p.t))||1,rmax=Math.max(...pts.map(p=>p.rpm),100);
   const X=t=>pad+(t/tmax)*(W-2*pad),Y=v=>H-pad-(v/rmax)*(H-2*pad);
-  let poly=pts.map(p=>X(p.t).toFixed(1)+","+Y(p.rpm).toFixed(1)).join(" ");
-  let grid="";for(let i=0;i<=4;i++){const y=pad+i*(H-2*pad)/4;grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(W-pad)+'" y2="'+y+'" stroke="#1b3a42"/>';const val=Math.round(rmax*(1-i/4));grid+='<text x="4" y="'+(y+4)+'" fill="#6fae86" font-size="11">'+val+'</text>';}
-  const svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%">'+grid+
-    '<polyline points="'+poly+'" fill="none" stroke="#37BE5B" stroke-width="2.5"/>'+
-    '<text x="'+(W-pad)+'" y="'+(H-8)+'" fill="#6fae86" font-size="11" text-anchor="end">'+tmax.toFixed(1)+' s</text>'+
-    '<text x="'+pad+'" y="'+(H-8)+'" fill="#6fae86" font-size="11">0 s</text></svg>';
-  $("simChart").innerHTML=svg;
-  $("simRes").className="ures";$("simRes").textContent="Total process time: "+tmax.toFixed(1)+" s  |  peak "+rmax+" rpm";
-}
-$("thGo").onclick=()=>{const r0=+$("thR0").value,h0=+$("thH0").value,r1=+$("thR1").value;
-  if(r0<=0||r1<=0||h0<=0){toast("Enter positive values");return;}
-  const k=h0*Math.sqrt(r0);const h1=k/Math.sqrt(r1);
-  $("thRes").className="ures";$("thRes").textContent="Estimated thickness at "+r1+" rpm:\n"+h1.toFixed(1)+" nm\n(1/\u221Arpm scaling; approximation)";};
-$("dGo").onclick=()=>{const c1=+$("dC1").value,c2=+$("dC2").value,v2=+$("dV2").value;
-  if(c1<=0||c2<0||v2<=0){toast("Check values");return;}if(c2>c1){toast("Target must be < stock");return;}
-  const v1=c2*v2/c1;$("dRes").className="ures";$("dRes").textContent="Take "+v1.toFixed(2)+" mL of stock\nAdd "+(v2-v1).toFixed(2)+" mL of solvent\nFinal: "+v2+" mL at C2="+c2;};
-$("sGo").onclick=()=>{const M=+$("sM").value,V=+$("sV").value,MM=+$("sMM").value;
-  if(M<=0||V<=0||MM<=0){toast("Enter positive values");return;}
-  const mass=M*(V/1000)*MM;$("sRes").className="ures";$("sRes").textContent="Mass needed: "+mass.toFixed(3)+" g\nDissolve in solvent to "+V+" mL total.";};
+  const poly=pts.map(p=>X(p.t).toFixed(1)+","+Y(p.rpm).toFixed(1)).join(" ");
+  let grid="";for(let i=0;i<=4;i++){const y=pad+i*(H-2*pad)/4;grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(W-pad)+'" y2="'+y+'" stroke="#1b3a42"/><text x="4" y="'+(y+4)+'" fill="#6fae86" font-size="11">'+Math.round(rmax*(1-i/4))+'</text>';}
+  $("simChart").innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%">'+grid+'<polyline points="'+poly+'" fill="none" stroke="#37BE5B" stroke-width="2.5"/><text x="'+(W-pad)+'" y="'+(H-8)+'" fill="#6fae86" font-size="11" text-anchor="end">'+tmax.toFixed(1)+' s</text><text x="'+pad+'" y="'+(H-8)+'" fill="#6fae86" font-size="11">0 s</text></svg>';
+  $("simRes").className="ures";$("simRes").textContent="Total process time: "+tmax.toFixed(1)+" s  |  peak "+rmax+" rpm";}
+$("thGo").onclick=()=>{const r0=+$("thR0").value,h0=+$("thH0").value,r1=+$("thR1").value;if(r0<=0||r1<=0||h0<=0){toast("Enter positive values");return;}const k=h0*Math.sqrt(r0),h1=k/Math.sqrt(r1);$("thRes").className="ures";$("thRes").textContent="Estimated thickness at "+r1+" rpm:\n"+h1.toFixed(1)+" nm\n(1/\u221Arpm scaling; approximation)";};
+$("dGo").onclick=()=>{const c1=+$("dC1").value,c2=+$("dC2").value,v2=+$("dV2").value;if(c1<=0||c2<0||v2<=0){toast("Check values");return;}if(c2>c1){toast("Target must be < stock");return;}const v1=c2*v2/c1;$("dRes").className="ures";$("dRes").textContent="Take "+v1.toFixed(2)+" mL of stock\nAdd "+(v2-v1).toFixed(2)+" mL of solvent\nFinal: "+v2+" mL at C2="+c2;};
+$("sGo").onclick=()=>{const M=+$("sM").value,V=+$("sV").value,MM=+$("sMM").value;if(M<=0||V<=0||MM<=0){toast("Enter positive values");return;}const mass=M*(V/1000)*MM;$("sRes").className="ures";$("sRes").textContent="Mass needed: "+mass.toFixed(3)+" g\nDissolve in solvent to "+V+" mL total.";};
 
-/* ---------- sync (navegador x remoto; equipamento vem no BLE) ---------- */
-function recipeSig(r){return r.name+"|"+r.activeSteps+"|"+r.steps.slice(0,r.activeSteps).map(s=>s.speed+","+s.accel+","+s.time).join(";");}
-function renderSync(){
-  const rem=DB.remote();
-  let rows="";let diffs=0;
-  for(let i=0;i<12;i++){
-    const b=recipes[i];const rr=rem?rem[i]:null;
-    const bs=recipeSig(b);const rs=rr?recipeSig(rr):null;
-    const same=rs!==null&&bs===rs;if(!same&&rs!==null)diffs++;
-    rows+='<tr><td class="n">'+i+' '+esc(b.name)+'</td><td>'+esc(b.name)+'</td><td>'+(rr?esc(rr.name):"&mdash;")+'</td><td>&mdash;</td><td class="'+(rs===null?"":(same?"same":"diff"))+'">'+(rs===null?"no remote":(same?"ok":"differs"))+'</td></tr>';
-  }
-  $("syncBody").innerHTML='<table class="synctbl"><tr><th>Recipe</th><th>Browser</th><th>Remote</th><th>Equipment</th><th>Status</th></tr>'+rows+'</table>'+
-    (rem?('<div class="note">'+diffs+' recipe(s) differ between browser and remote.</div>'):'<div class="note">No remote snapshot yet. Use "Push" to create one (mock). With Supabase wired, this reads/writes the real database.</div>');
+/* ---------- sync (navegador x nuvem; equipamento vem no BLE) ---------- */
+async function renderSync(){
+  let remote=null;
+  if(eqId){const {data}=await sb.from("recipes").select("*").eq("equipment_id",eqId).order("slot");if(data)remote=buildRecipeArray(data);}
+  let rows="",diffs=0;
+  for(let i=0;i<12;i++){const b=recipes[i],rr=remote?remote[i]:null;const bs=recipeSig(b),rs=rr?recipeSig(rr):null;const same=rs!==null&&bs===rs;if(!same&&rs!==null)diffs++;
+    rows+='<tr><td class="n">'+i+' '+esc(b.name)+'</td><td>'+esc(b.name)+'</td><td>'+(rr?esc(rr.name):"&mdash;")+'</td><td>&mdash;</td><td class="'+(rs===null?"":(same?"same":"diff"))+'">'+(rs===null?"no cloud":(same?"ok":"differs"))+'</td></tr>';}
+  $("syncBody").innerHTML='<table class="synctbl"><tr><th>Recipe</th><th>Browser</th><th>Cloud</th><th>Equipment</th><th>Status</th></tr>'+rows+'</table>'+(remote?('<div class="note">'+diffs+' recipe(s) differ between browser and cloud.</div>'):'<div class="note">No equipment linked, or cloud unreachable.</div>');
 }
-$("pushRemote").onclick=()=>{DB.saveRemote(JSON.parse(JSON.stringify(recipes)));toast("Pushed to remote (mock)");renderSync();};
-$("pullRemote").onclick=()=>{const rem=DB.remote();if(!rem){toast("No remote snapshot");return;}recipes=JSON.parse(JSON.stringify(rem));DB.saveRecipes(recipes);current=Math.min(current,11);toast("Pulled from remote");renderAll();};
+$("pushRemote").onclick=async()=>{if(!eqId){toast("No equipment linked");return;}for(const r of recipes)await saveRecipeRemote(r);toast("Pushed browser -> cloud");renderSync();};
+$("pullRemote").onclick=async()=>{if(!eqId){toast("No equipment linked");return;}await loadRemoteRecipes();toast("Pulled cloud -> browser");renderAll();renderSync();};
 
 /* ---------- boot ---------- */
 function renderAll(){renderPreview();if(view==="recipes")renderRecipes();if(view==="utils")renderUtils();if(view==="sync")renderSync();}
-(function boot(){
-  session=DB.session();
-  if(session){$("login").classList.add("hidden");afterLogin();}
+(async function boot(){
+  recipes=localRecipes()||defaultRecipes();
+  if(localStorage.getItem("spinx_guest")==="1"){session={mode:"guest"};$("login").classList.add("hidden");afterLogin();return;}
+  try{const {data:{session:s}}=await sb.auth.getSession();if(s){await afterAuth();}}catch(e){}
 })();
 </script></body></html>
