@@ -61,7 +61,7 @@ h2.sec{color:var(--teal-d);font-size:18px;margin:4px 0 12px}
 /* nav */
 nav{position:fixed;bottom:0;left:0;right:0;background:#eef4f5;display:flex;box-shadow:0 -2px 10px rgba(0,0,0,.08);z-index:6}
 nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-weight:800;color:var(--muted);cursor:pointer;position:relative}nav button.on{color:var(--teal)}nav button.on::after{content:"";position:absolute;top:0;left:20%;right:20%;height:3px;background:var(--teal);border-radius:0 0 3px 3px}nav button .lk{font-size:11px}
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--teal-d);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:40}.toast.show{opacity:1}
+.blegate{position:fixed;inset:0;background:rgba(9,31,36,.72);display:flex;align-items:center;justify-content:center;z-index:45;padding:20px}.bgbox{background:#fff;border-radius:18px;padding:22px;max-width:360px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}.bgbox h2{margin:0 0 6px;color:var(--teal-d);font-size:18px}.bgbox p{margin:0 0 16px;color:var(--muted);font-size:14px}.bgprimary{width:100%;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:800;color:#fff;background:var(--teal);cursor:pointer;margin-bottom:8px}.bgskip{width:100%;border:none;background:none;color:var(--muted);font-weight:700;font-size:14px;cursor:pointer;text-decoration:underline;padding:8px}.bgerr{color:#a52f2f;font-size:12px;font-weight:600;margin-top:8px;min-height:16px}.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--teal-d);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:40}.toast.show{opacity:1}
 /* login */
 .login{position:fixed;inset:0;background:linear-gradient(160deg,var(--bg1),var(--bg2));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:50;padding:max(20px,4vh) 18px 40px;overflow-y:auto}
 .login .sxg{height:50px;margin-top:10px}.login img.acg{height:34px}
@@ -111,7 +111,7 @@ nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-w
   <div class="menu hidden" id="menu"></div>
 </header>
 
-<main>
+<div class="blegate hidden" id="bleGate"><div class="bgbox"><h2>Connect to your equipment</h2><p>Turn the machine on. On iPhone, open this page in the <b>Bluefy</b> app; on Android use Chrome.</p><button class="bgprimary" id="bleGateConnect">Connect via Bluetooth</button><button class="bgskip" id="bleGateSkip">Skip for now</button><div class="bgerr" id="bleGateErr"></div></div></div><main>
   <!-- CONTROL -->
   <section id="view-control">
     <div class="hero"><img src="data:image/png;base64,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"></div>
@@ -236,20 +236,38 @@ const K_REC="spinx_recipes";
 let recipes=[],current=0,view="control",edit=null,editStep=0,session=null,eqId=null;
 const BLE_SVC="6e400001-b5a3-f393-e0a9-e50e24dcca9e",BLE_RX="6e400002-b5a3-f393-e0a9-e50e24dcca9e",BLE_TX="6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 let bleDev=null,bleRx=null,bleTx=null,bleOn=false,bleBuf="",bleStatus=null,bleEquipRecipes=null,bleRecAccum={},blePoll=null;
+async function bleSetup(srv){
+  const s=await srv.getPrimaryService(BLE_SVC);
+  bleRx=await s.getCharacteristic(BLE_RX);bleTx=await s.getCharacteristic(BLE_TX);
+  await bleTx.startNotifications();bleTx.addEventListener("characteristicvaluechanged",bleNotify);
+  bleOn=true;$("btConnect").classList.add("on");$("btConnect").textContent="BT\u2713";
+  hideBleGate();applyLock();bleSend("STATUS");bleSend("RECIPES");startBlePoll();
+}
+function showBleGate(){if(!isGuest()&&!bleOn){$("bleGateErr").textContent="";$("bleGate").classList.remove("hidden");}}
+function hideBleGate(){$("bleGate").classList.add("hidden");}
 async function bleConnect(){
-  if(!navigator.bluetooth){toast("Use Chrome (Android) or Bluefy (iPhone)");return;}
+  if(!navigator.bluetooth){$("bleGateErr").textContent="This browser has no Web Bluetooth. iPhone: use Bluefy. Android: use Chrome.";return;}
   try{
-    toast("Scanning...");
+    $("bleGateErr").textContent="Scanning...";
     bleDev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:"SPINX"}],optionalServices:[BLE_SVC]});
     bleDev.addEventListener("gattserverdisconnected",bleDisc);
-    const srv=await bleDev.gatt.connect();const s=await srv.getPrimaryService(BLE_SVC);
-    bleRx=await s.getCharacteristic(BLE_RX);bleTx=await s.getCharacteristic(BLE_TX);
-    await bleTx.startNotifications();bleTx.addEventListener("characteristicvaluechanged",bleNotify);
-    bleOn=true;$("btConnect").classList.add("on");$("btConnect").textContent="BT\u2713";
-    applyLock();bleSend("STATUS");bleSend("RECIPES");startBlePoll();toast("Equipment connected");
-  }catch(e){toast("BLE failed");}
+    const srv=await bleDev.gatt.connect();
+    await bleSetup(srv);toast("Equipment connected");
+  }catch(e){var m=(e&&e.message)?e.message:(""+e);$("bleGateErr").textContent="Failed: "+m;toast("BLE: "+m);}
 }
-function bleDisc(){bleOn=false;$("btConnect").classList.remove("on");$("btConnect").textContent="BT";applyLock();stopBlePoll();toast("Equipment disconnected");}
+async function bleAutoReconnect(){
+  try{
+    if(!navigator.bluetooth||!navigator.bluetooth.getDevices)return false;
+    const ds=await navigator.bluetooth.getDevices();
+    const d=ds.find(x=>x.name&&x.name.indexOf("SPINX")===0);
+    if(!d)return false;
+    bleDev=d;bleDev.addEventListener("gattserverdisconnected",bleDisc);
+    const srv=await bleDev.gatt.connect();
+    await bleSetup(srv);toast("Equipment reconnected");return true;
+  }catch(e){return false;}
+}
+function bleStartFlow(){bleAutoReconnect().then(ok=>{if(!ok)showBleGate();});}
+function bleDisc(){bleOn=false;$("btConnect").classList.remove("on");$("btConnect").textContent="BT";applyLock();stopBlePoll();toast("Equipment disconnected");if(!isGuest())showBleGate();}
 function bleNotify(e){bleBuf+=new TextDecoder().decode(e.target.value);let nl;while((nl=bleBuf.indexOf("\n"))>=0){const line=bleBuf.slice(0,nl);bleBuf=bleBuf.slice(nl+1);if(line)bleLine(line);}}
 async function bleSend(cmd){if(!bleRx)return;try{await bleRx.writeValue(new TextEncoder().encode(cmd));}catch(e){}}
 function startBlePoll(){stopBlePoll();blePoll=setInterval(()=>{if(bleOn&&view==="control")bleSend("STATUS");},1000);}
@@ -309,6 +327,7 @@ function afterLogin(){
   $("statusBadge").className="badge"+(isGuest()?" guest":"");
   $("statusBadge").textContent=isGuest()?"GUEST":(session.serial||"READY");
   showView("control");renderAll();
+  if(!isGuest())bleStartFlow();
 }
 function applyLock(){
   const g=isGuest();
@@ -432,7 +451,9 @@ $("pullRemote").onclick=async()=>{if(!eqId){toast("No equipment linked");return;
 document.getElementById("btnVac").onclick=()=>{if(bleOn){bleSend("VAC "+($("btnVac").classList.contains("on")?"0":"1"));setTimeout(()=>bleSend("STATUS"),150);}};
 document.getElementById("btnStart").onclick=()=>{if(bleOn){bleSend("START");setTimeout(()=>bleSend("STATUS"),150);}};
 document.getElementById("btnStop").onclick=()=>{if(bleOn){bleSend("STOP");setTimeout(()=>bleSend("STATUS"),150);}};
-document.getElementById("btConnect").onclick=()=>{if(bleOn&&bleDev&&bleDev.gatt.connected){bleDev.gatt.disconnect();}else bleConnect();};
+document.getElementById("btConnect").onclick=()=>{if(bleOn&&bleDev&&bleDev.gatt.connected){bleDev.gatt.disconnect();}else showBleGate();};
+document.getElementById("bleGateConnect").onclick=bleConnect;
+document.getElementById("bleGateSkip").onclick=hideBleGate;
 /* ---------- boot ---------- */
 function renderAll(){renderPreview();if(view==="recipes")renderRecipes();if(view==="utils")renderUtils();if(view==="sync")renderSync();}
 (async function boot(){
