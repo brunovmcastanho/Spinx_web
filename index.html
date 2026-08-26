@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AUTOCOAT | SPIN X Lite</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AUTOCOAT | SPIN X Lite</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script><style>
 :root{--teal:#127C8E;--teal-d:#0C5F6E;--teal-l:#2A9CB0;--bg1:#CDEAEE;--bg2:#A9D6DD;--card:#E6F5F5;--line:#1B7A8C;--green:#37BE5B;--green-d:#2AA34C;--muted:#6B7C86;--ink:#123038;--red:#E24C4C;--amber:#E9A13B;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%}
 body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%;color:var(--ink);background:linear-gradient(160deg,var(--bg1),var(--bg2));display:flex;flex-direction:column;min-height:100dvh}
@@ -204,7 +204,7 @@ nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-w
 <script>
 "use strict";
 const SB_URL="https://ailoycksqnlfokpncowj.supabase.co",SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpbG95Y2tzcW5sZm9rcG5jb3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NzY2NTksImV4cCI6MjEwMzI1MjY1OX0.IPe3Pfs4U-ZUZ1PW0PY9n8baGxODciAHTA2gNdB6yVI";
-const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const sb=window.supabase.createClient(SB_URL,SB_KEY,{global:{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}},auth:{persistSession:true,autoRefreshToken:true}});
 const LIM={speed:{max:6500,step:50},accel:{max:4000,step:10},time:{max:1000,step:1}};
 const $=id=>document.getElementById(id);
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
