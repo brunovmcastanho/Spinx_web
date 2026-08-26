@@ -205,6 +205,23 @@ nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-w
 "use strict";
 const SB_URL="https://ailoycksqnlfokpncowj.supabase.co",SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpbG95Y2tzcW5sZm9rcG5jb3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NzY2NTksImV4cCI6MjEwMzI1MjY1OX0.IPe3Pfs4U-ZUZ1PW0PY9n8baGxODciAHTA2gNdB6yVI";
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{global:{headers:{apikey:SB_KEY}},auth:{persistSession:true,autoRefreshToken:true}});
+async function authHeaders(){
+  let tok=SB_KEY;
+  try{const {data}=await sb.auth.getSession(); if(data&&data.session&&data.session.access_token) tok=data.session.access_token;}catch(e){}
+  return {apikey:SB_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json"};
+}
+async function sbGet(path){
+  const h=await authHeaders();
+  const r=await fetch(SB_URL+"/rest/v1/"+path,{headers:h});
+  if(!r.ok) throw new Error("REST "+r.status+" "+(await r.text()));
+  return r.json();
+}
+async function sbRpc(fn,body){
+  const h=await authHeaders();
+  const r=await fetch(SB_URL+"/rest/v1/rpc/"+fn,{method:"POST",headers:h,body:JSON.stringify(body)});
+  if(!r.ok) throw new Error("RPC "+r.status+" "+(await r.text()));
+  return r.json();
+}
 const LIM={speed:{max:6500,step:50},accel:{max:4000,step:10},time:{max:1000,step:1}};
 const $=id=>document.getElementById(id);
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -226,15 +243,16 @@ function serialToEmail(s){return s.trim().toLowerCase().replace(/[^a-z0-9._-]/g,
 /* ---------- carregar receitas do Supabase ---------- */
 async function loadRemoteRecipes(){
   if(!eqId){recipes=localRecipes()||defaultRecipes();return;}
-  const {data,error}=await sb.from("recipes").select("*").eq("equipment_id",eqId).order("slot");
-  if(error||!data){recipes=localRecipes()||defaultRecipes();toast("Cloud read failed, using local");return;}
-  recipes=buildRecipeArray(data);saveLocal();
+  try{
+    const data=await sbGet("recipes?select=*&equipment_id=eq."+eqId+"&order=slot");
+    recipes=buildRecipeArray(data);saveLocal();
+  }catch(e){recipes=localRecipes()||defaultRecipes();console.log("recipes:",e.message);}
 }
 async function saveRecipeRemote(r){
   if(!eqId)return;
   const steps=r.steps.slice(0,r.activeSteps).map(s=>({speed:s.speed,accel:s.accel,time:s.time}));
-  const {error}=await sb.rpc("upsert_recipe",{p_equipment:eqId,p_slot:r.index,p_name:r.name,p_active:r.activeSteps,p_steps:steps,p_updated_at:new Date().toISOString(),p_force:true});
-  if(error)toast("Cloud save failed: "+error.message);
+  try{await sbRpc("upsert_recipe",{p_equipment:eqId,p_slot:r.index,p_name:r.name,p_active:r.activeSteps,p_steps:steps,p_updated_at:new Date().toISOString(),p_force:true});}
+  catch(e){toast("Cloud save failed");console.log("save:",e.message);}
 }
 
 /* ---------- login ---------- */
@@ -242,8 +260,10 @@ function isGuest(){return !session||session.mode==="guest";}
 async function afterAuth(){
   const {data:{user}}=await sb.auth.getUser();
   session={mode:"linked",userId:user?user.id:null,serial:null};
-  const {data:eqs,error}=await sb.from("equipments").select("id,serial,name").limit(1);
-  if(!error&&eqs&&eqs.length){eqId=eqs[0].id;session.serial=eqs[0].serial;}else{eqId=null;}
+  try{
+    const eqs=await sbGet("equipments?select=id,serial,name&limit=1");
+    if(eqs&&eqs.length){eqId=eqs[0].id;session.serial=eqs[0].serial;}else{eqId=null;}
+  }catch(e){eqId=null;console.log("equipments:",e.message);}
   await loadRemoteRecipes();
   $("login").classList.add("hidden");
   afterLogin();
@@ -362,7 +382,7 @@ $("sGo").onclick=()=>{const M=+$("sM").value,V=+$("sV").value,MM=+$("sMM").value
 /* ---------- sync (navegador x nuvem; equipamento vem no BLE) ---------- */
 async function renderSync(){
   let remote=null;
-  if(eqId){const {data}=await sb.from("recipes").select("*").eq("equipment_id",eqId).order("slot");if(data)remote=buildRecipeArray(data);}
+  if(eqId){try{const data=await sbGet("recipes?select=*&equipment_id=eq."+eqId+"&order=slot");remote=buildRecipeArray(data);}catch(e){console.log("sync:",e.message);}}
   let rows="",diffs=0;
   for(let i=0;i<12;i++){const b=recipes[i],rr=remote?remote[i]:null;const bs=recipeSig(b),rs=rr?recipeSig(rr):null;const same=rs!==null&&bs===rs;if(!same&&rs!==null)diffs++;
     rows+='<tr><td class="n">'+i+' '+esc(b.name)+'</td><td>'+esc(b.name)+'</td><td>'+(rr?esc(rr.name):"&mdash;")+'</td><td>&mdash;</td><td class="'+(rs===null?"":(same?"same":"diff"))+'">'+(rs===null?"no cloud":(same?"ok":"differs"))+'</td></tr>';}
