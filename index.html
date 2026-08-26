@@ -241,7 +241,9 @@ async function bleSetup(srv){
   bleRx=await s.getCharacteristic(BLE_RX);bleTx=await s.getCharacteristic(BLE_TX);
   await bleTx.startNotifications();bleTx.addEventListener("characteristicvaluechanged",bleNotify);
   bleOn=true;$("btConnect").classList.add("on");$("btConnect").textContent="BT\u2713";
-  hideBleGate();applyLock();bleSend("STATUS");bleSend("RECIPES");startBlePoll();
+  hideBleGate();applyLock();startBlePoll();
+  bleSend("STATUS");bleSend("RECIPES");
+  setTimeout(()=>{ if(bleOn && (!bleEquipRecipes || !bleEquipRecipes.length)){ console.log("RECIPES retry"); bleSend("RECIPES"); } },2500);
 }
 function showBleGate(){if(!isGuest()&&!bleOn){$("bleGateErr").textContent="";$("bleGate").classList.remove("hidden");}}
 function hideBleGate(){$("bleGate").classList.add("hidden");}
@@ -269,13 +271,21 @@ async function bleAutoReconnect(){
 function bleStartFlow(){bleAutoReconnect().then(ok=>{if(!ok)showBleGate();});}
 function bleDisc(){bleOn=false;$("btConnect").classList.remove("on");$("btConnect").textContent="BT";applyLock();stopBlePoll();toast("Equipment disconnected");if(!isGuest())showBleGate();}
 function bleNotify(e){bleBuf+=new TextDecoder().decode(e.target.value);let nl;while((nl=bleBuf.indexOf("\n"))>=0){const line=bleBuf.slice(0,nl);bleBuf=bleBuf.slice(nl+1);if(line)bleLine(line);}}
-async function bleSend(cmd){if(!bleRx)return;try{await bleRx.writeValue(new TextEncoder().encode(cmd));}catch(e){}}
+let bleWriteChain=Promise.resolve();
+function bleSend(cmd){
+  bleWriteChain=bleWriteChain.then(async()=>{
+    if(!bleRx)return;
+    try{await bleRx.writeValue(new TextEncoder().encode(cmd));}
+    catch(e){console.log("BLE write fail:",cmd,e&&e.message);}
+  });
+  return bleWriteChain;
+}
 function startBlePoll(){stopBlePoll();blePoll=setInterval(()=>{if(bleOn&&view==="control")bleSend("STATUS");},1000);}
 function stopBlePoll(){if(blePoll){clearInterval(blePoll);blePoll=null;}}
 function bleLine(line){
   if(line.startsWith("S|"))bleApplyStatus(line);
   else if(line.startsWith("R|")){const p=line.split("|");const idx=+p[1];const g=(p[4]||"").split(";");const steps=[];for(let i=0;i<6;i++){const a=(g[i]||"0,0,0").split(",");steps.push({speed:+a[0]||0,accel:+a[1]||0,time:+a[2]||0});}bleRecAccum[idx]={index:idx,name:p[2],activeSteps:+p[3]||0,steps:steps};}
-  else if(line==="REND"){bleEquipRecipes=[];for(let i=0;i<12;i++)if(bleRecAccum[i])bleEquipRecipes.push(bleRecAccum[i]);bleRecAccum={};if(view==="sync")renderSync();}
+  else if(line==="REND"){bleEquipRecipes=[];for(let i=0;i<12;i++)if(bleRecAccum[i])bleEquipRecipes.push(bleRecAccum[i]);console.log("BLE recipes:",bleEquipRecipes.length);bleRecAccum={};if(view==="sync")renderSync();if(view==="control")renderControlLive();}
 }
 function bleApplyStatus(line){const p=line.split("|");
   bleStatus={state:p[1],vac:p[2]==="1",kpa:p[3],ind:p[4]==="1",canStart:p[5]==="1",cmdRpm:p[6],accel:p[7],timeRem:p[8],step:p[9],pvSp:p[10],pvAc:p[11],pvTm:p[12],name:p.slice(17).join("|")};
