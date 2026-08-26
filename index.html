@@ -7,6 +7,7 @@ body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-text-s
 .hdr .logo-sx{height:24px;filter:brightness(0) invert(1)}
 .hdr .name{flex:1;text-align:center;font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .badge{background:var(--green);color:#fff;font-weight:700;font-size:11px;padding:5px 9px;border-radius:8px;white-space:nowrap}.badge.run{background:var(--amber)}.badge.stop{background:var(--red)}.badge.guest{background:#6b8b93}
+.btcon{background:rgba(255,255,255,.15);border:none;color:#fff;font-weight:800;font-size:12px;padding:0 10px;height:34px;border-radius:9px;cursor:pointer;letter-spacing:.5px}.btcon.on{background:var(--green)}
 .menubtn{background:rgba(255,255,255,.15);border:none;color:#fff;width:38px;height:38px;border-radius:10px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .menu{position:absolute;top:56px;right:12px;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);min-width:210px;overflow:hidden;z-index:30}
 .menu a{display:flex;align-items:center;gap:10px;padding:14px 16px;color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;border-bottom:1px solid #eef3f4}
@@ -104,6 +105,7 @@ nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-w
 <header class="hdr">
   <img class="logo-sx" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTg5IiB6b29tQW5kUGFuPSJtYWduaWZ5IiB2aWV3Qm94PSIwIDAgMTQxLjc1IDMxLjUiIGhlaWdodD0iNDIiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZlcnNpb249IjEuMCI+PGRlZnM+PGNsaXBQYXRoIGlkPSI3ZmEzYTIxODI4Ij48cGF0aCBkPSJNIDAuOTg0Mzc1IDYgTCAxNDAuNTE5NTMxIDYgTCAxNDAuNTE5NTMxIDI0IEwgMC45ODQzNzUgMjQgWiBNIDAuOTg0Mzc1IDYgIiBjbGlwLXJ1bGU9Im5vbnplcm8iLz48L2NsaXBQYXRoPjxjbGlwUGF0aCBpZD0iZDEzZDQyOWZkYSI+PHBhdGggZD0iTSAzIDAuODc4OTA2IEwgMTM5IDAuODc4OTA2IEwgMTM5IDE3Ljg1OTM3NSBMIDMgMTcuODU5Mzc1IFogTSAzIDAuODc4OTA2ICIgY2xpcC1ydWxlPSJub256ZXJvIi8+PC9jbGlwUGF0aD48Y2xpcFBhdGggaWQ9ImExMWYxNDc4NTQiPjxyZWN0IHg9IjAiIHdpZHRoPSIxNDEiIHk9IjAiIGhlaWdodD0iMTgiLz48L2NsaXBQYXRoPjwvZGVmcz48ZyBjbGlwLXBhdGg9InVybCgjN2ZhM2EyMTgyOCkiPjxnIHRyYW5zZm9ybT0ibWF0cml4KDEsIDAsIDAsIDEsIDAsIDYpIj48ZyBjbGlwLXBhdGg9InVybCgjYTExZjE0Nzg1NCkiPjxnIGNsaXAtcGF0aD0idXJsKCNkMTNkNDI5ZmRhKSI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTSAxMS4yNzM0MzggMTMuMDUwNzgxIEwgMyAxMy4wNTA3ODEgTCAzIDE1LjMyNDIxOSBMIDE0LjQ1MzEyNSAxNS4zMjQyMTkgQyAxNi41NjI1IDE1LjMyNDIxOSAxNy42MTMyODEgMTQuNTExNzE5IDE3LjYxMzI4MSAxMi44OTA2MjUgTCAxNy42MTMyODEgMTAuODAwNzgxIEMgMTcuNjEzMjgxIDkuMDc4MTI1IDE2LjQ0NTMxMiA4LjIxODc1IDE0LjEyMTA5NCA4LjIxODc1IEwgNi4zNzUgOC4yMTg3NSBDIDUuNjEzMjgxIDguMjE4NzUgNS4yMjI2NTYgOC4wMTU2MjUgNS4yMjI2NTYgNy42MTcxODggTCA1LjIyMjY1NiA2LjM5NDUzMSBDIDUuMjIyNjU2IDUuOTI1NzgxIDUuNjA5Mzc1IDUuNjg3NSA2LjM3NSA1LjY4NzUgTCAxNy42MTMyODEgNS42ODc1IEwgMTcuNjEzMjgxIDMuNDEwMTU2IEwgNi4xNzU3ODEgMy40MTAxNTYgQyA0LjA2MjUgMy40MTAxNTYgMyA0LjI0NjA5NCAzIDUuODk4NDM4IEwgMyA3LjgwNDY4OCBDIDMgOS42MDkzNzUgNC4xMjg5MDYgMTAuNTE5NTMxIDYuMzc4OTA2IDEwLjUxOTUzMSBMIDE0LjEyNSAxMC41MTk1MzEgQyAxNC45MDYyNSAxMC41MTk1MzEgMTUuMzAwNzgxIDEwLjcyMjY1NiAxNS4zMDA3ODEgMTEuMTE3MTg4IEwgMTUuMzAwNzgxIDEyLjM3ODkwNiBDIDE1LjMwMDc4MSAxMi44MjAzMTIgMTQuOTAyMzQ0IDEzLjA1MDc4MSAxNC4xMjUgMTMuMDUwNzgxIFogTSAzNS4wODIwMzEgMTAuNDk2MDk0IEwgMjUuNzQyMTg4IDEwLjQ5NjA5NCBMIDI1Ljc0MjE4OCAxNS4zMjQyMTkgTCAyMy41MTk1MzEgMTUuMzI0MjE5IEwgMjMuNTE5NTMxIDguMjE4NzUgTCAzNC42NDQ1MzEgOC4yMTg3NSBDIDM1LjQyNTc4MSA4LjIxODc1IDM1LjgyMDMxMiA4LjAxNTYyNSAzNS44MjAzMTIgNy42MTcxODggTCAzNS44MjAzMTIgNi4zOTQ1MzEgQyAzNS44MjAzMTIgNS45MjU3ODEgMzUuNDIxODc1IDUuNjg3NSAzNC42NDQ1MzEgNS42ODc1IEwgMjMuNTE5NTMxIDUuNjg3NSBMIDIzLjUxOTUzMSAzLjQxMDE1NiBMIDM0Ljk2ODc1IDMuNDEwMTU2IEMgMzcuMDkzNzUgMy40MTAxNTYgMzguMTc5Njg4IDQuMjM4MjgxIDM4LjE3OTY4OCA1Ljg3NSBMIDM4LjE3OTY4OCA4LjA3ODEyNSBDIDM4LjE3OTY4OCA5LjY1NjI1IDM3LjE0MDYyNSAxMC40OTYwOTQgMzUuMDgyMDMxIDEwLjQ5NjA5NCBaIE0gNDYuMjYxNzE5IDguMjY5NTMxIEwgNDYuMjYxNzE5IDE1LjMyNDIxOSBMIDQ0LjAzOTA2MiAxNS4zMjQyMTkgTCA0NC4wMzkwNjIgMy40MTAxNTYgTCA0Ni4yNjE3MTkgMy40MTAxNTYgWiBNIDY0LjQ0MTQwNiAxNS4zMjQyMTkgTCA2NC40NDE0MDYgNi4zOTQ1MzEgQyA2NC40NDE0MDYgNS45MjU3ODEgNjQuMDQyOTY5IDUuNjg3NSA2My4yNjU2MjUgNS42ODc1IEwgNTUuNTE1NjI1IDUuNjg3NSBDIDU0Ljc1MzkwNiA1LjY4NzUgNTQuMzYzMjgxIDUuOTI5Njg4IDU0LjM2MzI4MSA2LjM5NDUzMSBMIDU0LjM2MzI4MSAxNS4zMjQyMTkgTCA1Mi4wOTM3NSAxNS4zMjQyMTkgTCA1Mi4wOTM3NSA1Ljg5ODQzOCBDIDUyLjA5Mzc1IDQuMjQyMTg4IDUzLjE1MjM0NCAzLjQxMDE1NiA1NS4yNjk1MzEgMy40MTAxNTYgTCA2My41NDY4NzUgMy40MTAxNTYgQyA2NS42NTYyNSAzLjQxMDE1NiA2Ni43MDcwMzEgNC4yNDYwOTQgNjYuNzA3MDMxIDUuODk4NDM4IEwgNjYuNzA3MDMxIDE1LjMyNDIxOSBaIE0gMTA1LjMzOTg0NCAxNC40NTMxMjUgTCAxMDUuMzM5ODQ0IDQuMzQzNzUgTCAxMDYuNTYyNSA0LjM0Mzc1IEwgMTA2LjU2MjUgMTMuMzM5ODQ0IEwgMTExLjMxMjUgMTMuMzM5ODQ0IEwgMTExLjMxMjUgMTQuNDUzMTI1IFogTSAxMTYuMTE3MTg4IDE0LjQ1MzEyNSBMIDExNi4xMTcxODggNy4yMzA0NjkgTCAxMTcuMjY5NTMxIDcuMjMwNDY5IEwgMTE3LjI2OTUzMSAxNC40NTMxMjUgWiBNIDExNi43MDcwMzEgNS41NTQ2ODggQyAxMTYuNTE1NjI1IDUuNTU0Njg4IDExNi4zNDc2NTYgNS40ODQzNzUgMTE2LjIwMzEyNSA1LjMzOTg0NCBDIDExNi4wNTg1OTQgNS4xOTUzMTIgMTE1Ljk4ODI4MSA1LjAyNzM0NCAxMTUuOTg4MjgxIDQuODMyMDMxIEMgMTE1Ljk4ODI4MSA0LjYzMjgxMiAxMTYuMDU4NTk0IDQuNDYwOTM4IDExNi4yMDMxMjUgNC4zMjAzMTIgQyAxMTYuMzQ3NjU2IDQuMTc5Njg4IDExNi41MTU2MjUgNC4xMDkzNzUgMTE2LjcwNzAzMSA0LjEwOTM3NSBDIDExNi45MTAxNTYgNC4xMDkzNzUgMTE3LjA3ODEyNSA0LjE3OTY4OCAxMTcuMjE4NzUgNC4zMjAzMTIgQyAxMTcuMzU5Mzc1IDQuNDYwOTM4IDExNy40MjU3ODEgNC42MzI4MTIgMTE3LjQyNTc4MSA0LjgzMjAzMSBDIDExNy40MjU3ODEgNS4wMjczNDQgMTE3LjM1OTM3NSA1LjE5NTMxMiAxMTcuMjE4NzUgNS4zMzk4NDQgQyAxMTcuMDc4MTI1IDUuNDg0Mzc1IDExNi45MTAxNTYgNS41NTQ2ODggMTE2LjcwNzAzMSA1LjU1NDY4OCBaIE0gMTI1LjY0NDUzMSAxNC42MjUgQyAxMjQuOTQxNDA2IDE0LjYyNSAxMjQuNDAyMzQ0IDE0LjQ0NTMxMiAxMjQuMDE1NjI1IDE0LjA3ODEyNSBDIDEyMy42MzI4MTIgMTMuNzEwOTM4IDEyMy40NDE0MDYgMTMuMTk1MzEyIDEyMy40NDE0MDYgMTIuNTMxMjUgTCAxMjMuNDQxNDA2IDguMjU3ODEyIEwgMTIyLjE5MTQwNiA4LjI1NzgxMiBMIDEyMi4xOTE0MDYgNy4yMzA0NjkgTCAxMjMuNDQxNDA2IDcuMjMwNDY5IEwgMTIzLjQ0MTQwNiA0Ljk3NjU2MiBMIDEyNC41OTM3NSA0Ljk3NjU2MiBMIDEyNC41OTM3NSA3LjIzMDQ2OSBMIDEyNi43NSA3LjIzMDQ2OSBMIDEyNi43NSA4LjI1NzgxMiBMIDEyNC41OTM3NSA4LjI1NzgxMiBMIDEyNC41OTM3NSAxMi40MTc5NjkgQyAxMjQuNTkzNzUgMTIuNzgxMjUgMTI0LjY5MTQwNiAxMy4wNjI1IDEyNC44ODY3MTkgMTMuMjYxNzE5IEMgMTI1LjA4NTkzOCAxMy40NjA5MzggMTI1LjM1OTM3NSAxMy41NTg1OTQgMTI1LjcxNDg0NCAxMy41NTg1OTQgQyAxMjUuODMyMDMxIDEzLjU1ODU5NCAxMjUuOTQxNDA2IDEzLjUzOTA2MiAxMjYuMDU0Njg4IDEzLjUwNzgxMiBDIDEyNi4xNjQwNjIgMTMuNDcyNjU2IDEyNi4zMDg1OTQgMTMuMzkwNjI1IDEyNi40OTIxODggMTMuMjUzOTA2IEwgMTI2LjkzNzUgMTQuMTk1MzEyIEMgMTI2LjY4NzUgMTQuMzU1NDY5IDEyNi40NjQ4NDQgMTQuNDY4NzUgMTI2LjI2MTcxOSAxNC41MzEyNSBDIDEyNi4wNjI1IDE0LjU5Mzc1IDEyNS44NTU0NjkgMTQuNjI1IDEyNS42NDQ1MzEgMTQuNjI1IFogTSAxMzUuMDgyMDMxIDE0LjYyNSBDIDEzNC4zODI4MTIgMTQuNjI1IDEzMy43NjU2MjUgMTQuNDY0ODQ0IDEzMy4yMjY1NjIgMTQuMTQ0NTMxIEMgMTMyLjY4NzUgMTMuODIwMzEyIDEzMi4yNjk1MzEgMTMuMzc1IDEzMS45Njg3NSAxMi44MDg1OTQgQyAxMzEuNjY0MDYyIDEyLjIzODI4MSAxMzEuNTE1NjI1IDExLjU4MjAzMSAxMzEuNTE1NjI1IDEwLjg0Mzc1IEMgMTMxLjUxNTYyNSAxMC4xMDE1NjIgMTMxLjY2NDA2MiA5LjQ0NTMxMiAxMzEuOTY4NzUgOC44Nzg5MDYgQyAxMzIuMjY5NTMxIDguMzA4NTk0IDEzMi42ODc1IDcuODYzMjgxIDEzMy4yMTg3NSA3LjU0Mjk2OSBDIDEzMy43NSA3LjIxODc1IDEzNC4zNjMyODEgNy4wNTg1OTQgMTM1LjA1NDY4OCA3LjA1ODU5NCBDIDEzNS43MjY1NjIgNy4wNTg1OTQgMTM2LjMwNDY4OCA3LjIyMjY1NiAxMzYuNzk2ODc1IDcuNTU0Njg4IEMgMTM3LjI4NTE1NiA3Ljg4NjcxOSAxMzcuNjY0MDYyIDguMzUxNTYyIDEzNy45MzM1OTQgOC45NDkyMTkgQyAxMzguMTk5MjE5IDkuNTQ2ODc1IDEzOC4zMzU5MzggMTAuMjUgMTM4LjMzNTkzOCAxMS4wNTg1OTQgTCAxMzIuNjc5Njg4IDExLjA1ODU5NCBDIDEzMi43MjY1NjIgMTEuODQ3NjU2IDEzMi45NzY1NjIgMTIuNDY0ODQ0IDEzMy40Mjk2ODggMTIuOTA2MjUgQyAxMzMuODc4OTA2IDEzLjM1MTU2MiAxMzQuNDQ5MjE5IDEzLjU3NDIxOSAxMzUuMTQwNjI1IDEzLjU3NDIxOSBDIDEzNS42NDg0MzggMTMuNTc0MjE5IDEzNi4wNzgxMjUgMTMuNDUzMTI1IDEzNi40Mjk2ODggMTMuMjEwOTM4IEMgMTM2Ljc3NzM0NCAxMi45Njg3NSAxMzcuMDUwNzgxIDEyLjY1MjM0NCAxMzcuMjQyMTg4IDEyLjI1NzgxMiBMIDEzOC4yMzQzNzUgMTIuNzYxNzE5IEMgMTM4LjA1MDc4MSAxMy4xNDA2MjUgMTM3LjgwODU5NCAxMy40NjQ4NDQgMTM3LjUwNzgxMiAxMy43NDYwOTQgQyAxMzcuMjA3MDMxIDE0LjAyMzQzOCAxMzYuODUxNTYyIDE0LjI0MjE4OCAxMzYuNDQxNDA2IDE0LjM5NDUzMSBDIDEzNi4wMzUxNTYgMTQuNTUwNzgxIDEzNS41ODIwMzEgMTQuNjI1IDEzNS4wODIwMzEgMTQuNjI1IFogTSAxMzIuNzY1NjI1IDEwLjA4OTg0NCBMIDEzNy4wOTc2NTYgMTAuMDg5ODQ0IEMgMTM3LjA3MDMxMiA5LjY3NTc4MSAxMzYuOTYwOTM4IDkuMzIwMzEyIDEzNi43NzM0MzggOS4wMjM0MzggQyAxMzYuNTg1OTM4IDguNzIyNjU2IDEzNi4zNDM3NSA4LjQ5MjE4OCAxMzYuMDQ2ODc1IDguMzI4MTI1IEMgMTM1Ljc1IDguMTY0MDYyIDEzNS40MTQwNjIgOC4wODIwMzEgMTM1LjAzOTA2MiA4LjA4MjAzMSBDIDEzNC42NzU3ODEgOC4wODIwMzEgMTM0LjMyNDIxOSA4LjE2NDA2MiAxMzMuOTg4MjgxIDguMzIwMzEyIEMgMTMzLjY1MjM0NCA4LjQ4MDQ2OSAxMzMuMzc1IDguNzEwOTM4IDEzMy4xNTYyNSA5LjAxNTYyNSBDIDEzMi45MzM1OTQgOS4zMTY0MDYgMTMyLjgwNDY4OCA5LjY3NTc4MSAxMzIuNzY1NjI1IDEwLjA4OTg0NCBaIE0gNzUuMjIyNjU2IDE3Ljg1OTM3NSBMIDgwLjE5NTMxMiAxNy44NTkzNzUgTCA5NS43MjI2NTYgMC44Nzg5MDYgTCA5MC45ODA0NjkgMC44Nzg5MDYgWiBNIDc2LjA5NzY1NiAwLjg3ODkwNiBMIDgyLjI4MTI1IDcuNTcwMzEyIEwgODQuNzg5MDYyIDQuODQzNzUgTCA4MS4xMjUgMC44Nzg5MDYgWiBNIDg3LjE5OTIxOSAxMi44OTQ1MzEgTCA5MS43NjE3MTkgMTcuODU5Mzc1IEwgOTYuODA4NTk0IDE3Ljg1OTM3NSBMIDg5LjY4MzU5NCAxMC4xNDg0MzggWiBNIDg3LjE5OTIxOSAxMi44OTQ1MzEgIiBmaWxsLW9wYWNpdHk9IjEiIGZpbGwtcnVsZT0ibm9uemVybyIvPjwvZz48L2c+PC9nPjwvZz48L3N2Zz4=">
   <div class="name" id="recName">-</div>
+  <button class="btcon" id="btConnect" title="Connect equipment">BT</button>
   <div class="badge" id="statusBadge">-</div>
   <button class="menubtn" id="menuBtn">&#9776;</button>
   <div class="menu hidden" id="menu"></div>
@@ -232,6 +234,39 @@ function cr(f,v){v=Math.round(v);if(v<0)v=0;if(v>LIM[f].max)v=LIM[f].max;return 
 /* ---------- estado + espelho local ---------- */
 const K_REC="spinx_recipes";
 let recipes=[],current=0,view="control",edit=null,editStep=0,session=null,eqId=null;
+const BLE_SVC="6e400001-b5a3-f393-e0a9-e50e24dcca9e",BLE_RX="6e400002-b5a3-f393-e0a9-e50e24dcca9e",BLE_TX="6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+let bleDev=null,bleRx=null,bleTx=null,bleOn=false,bleBuf="",bleStatus=null,bleEquipRecipes=null,bleRecAccum={},blePoll=null;
+async function bleConnect(){
+  if(!navigator.bluetooth){toast("Use Chrome (Android) or Bluefy (iPhone)");return;}
+  try{
+    toast("Scanning...");
+    bleDev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:"SPINX"}],optionalServices:[BLE_SVC]});
+    bleDev.addEventListener("gattserverdisconnected",bleDisc);
+    const srv=await bleDev.gatt.connect();const s=await srv.getPrimaryService(BLE_SVC);
+    bleRx=await s.getCharacteristic(BLE_RX);bleTx=await s.getCharacteristic(BLE_TX);
+    await bleTx.startNotifications();bleTx.addEventListener("characteristicvaluechanged",bleNotify);
+    bleOn=true;$("btConnect").classList.add("on");$("btConnect").textContent="BT\u2713";
+    applyLock();bleSend("STATUS");bleSend("RECIPES");startBlePoll();toast("Equipment connected");
+  }catch(e){toast("BLE failed");}
+}
+function bleDisc(){bleOn=false;$("btConnect").classList.remove("on");$("btConnect").textContent="BT";applyLock();stopBlePoll();toast("Equipment disconnected");}
+function bleNotify(e){bleBuf+=new TextDecoder().decode(e.target.value);let nl;while((nl=bleBuf.indexOf("\n"))>=0){const line=bleBuf.slice(0,nl);bleBuf=bleBuf.slice(nl+1);if(line)bleLine(line);}}
+async function bleSend(cmd){if(!bleRx)return;try{await bleRx.writeValue(new TextEncoder().encode(cmd));}catch(e){}}
+function startBlePoll(){stopBlePoll();blePoll=setInterval(()=>{if(bleOn&&view==="control")bleSend("STATUS");},1000);}
+function stopBlePoll(){if(blePoll){clearInterval(blePoll);blePoll=null;}}
+function bleLine(line){
+  if(line.startsWith("S|"))bleApplyStatus(line);
+  else if(line.startsWith("R|")){const p=line.split("|");const idx=+p[1];const g=(p[4]||"").split(";");const steps=[];for(let i=0;i<6;i++){const a=(g[i]||"0,0,0").split(",");steps.push({speed:+a[0]||0,accel:+a[1]||0,time:+a[2]||0});}bleRecAccum[idx]={index:idx,name:p[2],activeSteps:+p[3]||0,steps:steps};}
+  else if(line==="REND"){bleEquipRecipes=[];for(let i=0;i<12;i++)if(bleRecAccum[i])bleEquipRecipes.push(bleRecAccum[i]);bleRecAccum={};if(view==="sync")renderSync();}
+}
+function bleApplyStatus(line){const p=line.split("|");
+  bleStatus={state:p[1],vac:p[2]==="1",kpa:p[3],ind:p[4]==="1",canStart:p[5]==="1",cmdRpm:p[6],accel:p[7],timeRem:p[8],step:p[9],pvSp:p[10],pvAc:p[11],pvTm:p[12],name:p.slice(17).join("|")};
+  applyLock();if(view==="control")renderControlLive();}
+function renderControlLive(){if(!bleStatus)return;const s=bleStatus,run=(s.state!=="idle");
+  $("recName").textContent=s.name||"-";const bb=$("statusBadge");bb.className="badge";
+  if(s.state==="running"){bb.textContent="RUNNING";bb.classList.add("run");}else if(s.state==="stopping"){bb.textContent="STOPPING";bb.classList.add("stop");}else bb.textContent="READY";
+  $("rSpeed").textContent=run?s.cmdRpm:s.pvSp;$("rAccel").textContent=run?s.accel:s.pvAc;$("rTime").textContent=run?s.timeRem:s.pvTm;
+  $("btnVac").classList.toggle("on",s.vac);}
 function localRecipes(){try{const d=JSON.parse(localStorage.getItem(K_REC));return d&&d.length?d:null;}catch(e){return null;}}
 function saveLocal(){localStorage.setItem(K_REC,JSON.stringify(recipes));}
 function defaultRecipes(){const a=[];for(let i=0;i<12;i++)a.push({index:i,name:i===0?"DEFAULT":"BLANK",activeSteps:0,steps:padSteps([]),updatedAt:0});return a;}
@@ -277,10 +312,13 @@ function afterLogin(){
 }
 function applyLock(){
   const g=isGuest();
-  ["btnVac","btnStart","btnStop"].forEach(id=>$(id).disabled=true);
+  const canCtrl=bleOn && !g;
+  $("btnVac").disabled=!canCtrl;
+  $("btnStart").disabled=!(canCtrl && bleStatus && bleStatus.canStart);
+  $("btnStop").disabled=!canCtrl;
   $("ctrlNote").textContent=g
     ?"Guest mode: equipment control and recipe editing are locked. Utilities and tutorials are available."
-    :"Equipment control connects over Bluetooth (integration step). Preview below uses your saved recipe.";
+    :(bleOn?"Equipment connected over Bluetooth.":"Tap BT to connect the equipment (Bluefy on iPhone, Chrome on Android). Preview uses your saved recipe.");
   $("nav-recipes").innerHTML=g?"Recipes <span class='lk'>&#128274;</span>":"Recipes";
 }
 $("btnLogin").onclick=async()=>{
@@ -340,7 +378,7 @@ function showView(v){
   if(v==="utils")renderUtils();
   if(v==="tutorials")renderTutorials();
   if(v==="sync")renderSync();
-  if(v==="control")renderPreview();
+  if(v==="control"){ if(bleOn&&bleStatus) renderControlLive(); else renderPreview(); }
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{const v=b.dataset.view;if(v==="recipes"&&isGuest()){toast("Sign in with equipment to edit recipes");return;}showView(v);});
 
@@ -385,12 +423,16 @@ async function renderSync(){
   if(eqId){try{const data=await sbGet("recipes?select=*&equipment_id=eq."+eqId+"&order=slot");remote=buildRecipeArray(data);}catch(e){console.log("sync:",e.message);}}
   let rows="",diffs=0;
   for(let i=0;i<12;i++){const b=recipes[i],rr=remote?remote[i]:null;const bs=recipeSig(b),rs=rr?recipeSig(rr):null;const same=rs!==null&&bs===rs;if(!same&&rs!==null)diffs++;
-    rows+='<tr><td class="n">'+i+' '+esc(b.name)+'</td><td>'+esc(b.name)+'</td><td>'+(rr?esc(rr.name):"&mdash;")+'</td><td>&mdash;</td><td class="'+(rs===null?"":(same?"same":"diff"))+'">'+(rs===null?"no cloud":(same?"ok":"differs"))+'</td></tr>';}
+    const eq=(bleEquipRecipes&&bleEquipRecipes[i])?bleEquipRecipes[i]:null;rows+='<tr><td class="n">'+i+' '+esc(b.name)+'</td><td>'+esc(b.name)+'</td><td>'+(rr?esc(rr.name):"&mdash;")+'</td><td>'+(eq?esc(eq.name):"&mdash;")+'</td><td class="'+(rs===null?"":(same?"same":"diff"))+'">'+(rs===null?"no cloud":(same?"ok":"differs"))+'</td></tr>';}
   $("syncBody").innerHTML='<table class="synctbl"><tr><th>Recipe</th><th>Browser</th><th>Cloud</th><th>Equipment</th><th>Status</th></tr>'+rows+'</table>'+(remote?('<div class="note">'+diffs+' recipe(s) differ between browser and cloud.</div>'):'<div class="note">No equipment linked, or cloud unreachable.</div>');
 }
 $("pushRemote").onclick=async()=>{if(!eqId){toast("No equipment linked");return;}for(const r of recipes)await saveRecipeRemote(r);toast("Pushed browser -> cloud");renderSync();};
 $("pullRemote").onclick=async()=>{if(!eqId){toast("No equipment linked");return;}await loadRemoteRecipes();toast("Pulled cloud -> browser");renderAll();renderSync();};
 
+document.getElementById("btnVac").onclick=()=>{if(bleOn){bleSend("VAC "+($("btnVac").classList.contains("on")?"0":"1"));setTimeout(()=>bleSend("STATUS"),150);}};
+document.getElementById("btnStart").onclick=()=>{if(bleOn){bleSend("START");setTimeout(()=>bleSend("STATUS"),150);}};
+document.getElementById("btnStop").onclick=()=>{if(bleOn){bleSend("STOP");setTimeout(()=>bleSend("STATUS"),150);}};
+document.getElementById("btConnect").onclick=()=>{if(bleOn&&bleDev&&bleDev.gatt.connected){bleDev.gatt.disconnect();}else bleConnect();};
 /* ---------- boot ---------- */
 function renderAll(){renderPreview();if(view==="recipes")renderRecipes();if(view==="utils")renderUtils();if(view==="sync")renderSync();}
 (async function boot(){
