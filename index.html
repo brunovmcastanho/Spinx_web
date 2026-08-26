@@ -204,7 +204,7 @@ nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-w
 <script>
 "use strict";
 const SB_URL="https://ailoycksqnlfokpncowj.supabase.co",SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpbG95Y2tzcW5sZm9rcG5jb3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NzY2NTksImV4cCI6MjEwMzI1MjY1OX0.IPe3Pfs4U-ZUZ1PW0PY9n8baGxODciAHTA2gNdB6yVI";
-const sb=window.supabase.createClient(SB_URL,SB_KEY,{global:{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}},auth:{persistSession:true,autoRefreshToken:true}});
+const sb=window.supabase.createClient(SB_URL,SB_KEY,{global:{headers:{apikey:SB_KEY}},auth:{persistSession:true,autoRefreshToken:true}});
 const LIM={speed:{max:6500,step:50},accel:{max:4000,step:10},time:{max:1000,step:1}};
 const $=id=>document.getElementById(id);
 const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
