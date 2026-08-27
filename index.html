@@ -111,6 +111,7 @@ nav button{flex:1;border:none;background:none;padding:14px;font-size:15px;font-w
   <div class="menu hidden" id="menu"></div>
 </header>
 
+<div class="modal hidden" id="syncModal"><div class="mbox" id="syncMbox"></div></div>
 <div class="blegate hidden" id="bleGate"><div class="bgbox"><h2>Connect to your equipment</h2><p>Turn the machine on. On iPhone, open this page in the <b>Bluefy</b> app; on Android use Chrome.</p><button class="bgprimary" id="bleGateConnect">Connect via Bluetooth</button><button class="bgskip" id="bleGateSkip">Skip for now</button><div class="bgerr" id="bleGateErr"></div></div></div><main>
   <!-- CONTROL -->
   <section id="view-control">
@@ -235,12 +236,12 @@ function cr(f,v){v=Math.round(v);if(v<0)v=0;if(v>LIM[f].max)v=LIM[f].max;return 
 const K_REC="spinx_recipes";
 let recipes=[],current=0,view="control",edit=null,editStep=0,session=null,eqId=null;
 const BLE_SVC="6e400001-b5a3-f393-e0a9-e50e24dcca9e",BLE_RX="6e400002-b5a3-f393-e0a9-e50e24dcca9e",BLE_TX="6e400003-b5a3-f393-e0a9-e50e24dcca9e";
-let bleDev=null,bleRx=null,bleTx=null,bleOn=false,bleBuf="",bleStatus=null,bleEquipRecipes=null,bleRecAccum={},blePoll=null;
+let bleDev=null,bleRx=null,bleTx=null,bleOn=false,bleBuf="",bleStatus=null,bleEquipRecipes=null,bleRecAccum={},blePoll=null,bleReconciled=false;
 async function bleSetup(srv){
   const s=await srv.getPrimaryService(BLE_SVC);
   bleRx=await s.getCharacteristic(BLE_RX);bleTx=await s.getCharacteristic(BLE_TX);
   await bleTx.startNotifications();bleTx.addEventListener("characteristicvaluechanged",bleNotify);
-  bleOn=true;$("btConnect").classList.add("on");$("btConnect").textContent="BT\u2713";
+  bleOn=true;bleReconciled=false;$("btConnect").classList.add("on");$("btConnect").textContent="BT\u2713";
   hideBleGate();applyLock();startBlePoll();
   bleSend("STATUS");bleSend("RECIPES");
   setTimeout(()=>{ if(bleOn && (!bleEquipRecipes || !bleEquipRecipes.length)){ console.log("RECIPES retry"); bleSend("RECIPES"); } },2500);
@@ -268,8 +269,8 @@ async function bleAutoReconnect(){
     await bleSetup(srv);toast("Equipment reconnected");return true;
   }catch(e){return false;}
 }
-function bleStartFlow(){bleAutoReconnect().then(ok=>{if(!ok)showBleGate();});}
-function bleDisc(){bleOn=false;$("btConnect").classList.remove("on");$("btConnect").textContent="BT";applyLock();stopBlePoll();toast("Equipment disconnected");if(!isGuest())showBleGate();}
+function bleStartFlow(nag){bleAutoReconnect().then(ok=>{if(!ok&&nag)showBleGate();});}
+function bleDisc(){bleOn=false;$("btConnect").classList.remove("on");$("btConnect").textContent="BT";applyLock();stopBlePoll();toast("Equipment disconnected");}
 function bleNotify(e){bleBuf+=new TextDecoder().decode(e.target.value);let nl;while((nl=bleBuf.indexOf("\n"))>=0){const line=bleBuf.slice(0,nl);bleBuf=bleBuf.slice(nl+1);if(line)bleLine(line);}}
 let bleWriteChain=Promise.resolve();
 function bleSend(cmd){
@@ -285,7 +286,7 @@ function stopBlePoll(){if(blePoll){clearInterval(blePoll);blePoll=null;}}
 function bleLine(line){
   if(line.startsWith("S|"))bleApplyStatus(line);
   else if(line.startsWith("R|")){const p=line.split("|");const idx=+p[1];const g=(p[4]||"").split(";");const steps=[];for(let i=0;i<6;i++){const a=(g[i]||"0,0,0").split(",");steps.push({speed:+a[0]||0,accel:+a[1]||0,time:+a[2]||0});}bleRecAccum[idx]={index:idx,name:p[2],activeSteps:+p[3]||0,steps:steps};}
-  else if(line==="REND"){bleEquipRecipes=[];for(let i=0;i<12;i++)if(bleRecAccum[i])bleEquipRecipes.push(bleRecAccum[i]);console.log("BLE recipes:",bleEquipRecipes.length);bleRecAccum={};if(view==="sync")renderSync();if(view==="control")renderControlLive();}
+  else if(line==="REND"){bleEquipRecipes=[];for(let i=0;i<12;i++)if(bleRecAccum[i])bleEquipRecipes.push(bleRecAccum[i]);console.log("BLE recipes:",bleEquipRecipes.length);bleRecAccum={};if(view==="sync")renderSync();if(view==="control")renderControlLive();if(!bleReconciled){bleReconciled=true;reconcileOnConnect();}}
 }
 function bleApplyStatus(line){const p=line.split("|");
   bleStatus={state:p[1],vac:p[2]==="1",kpa:p[3],ind:p[4]==="1",canStart:p[5]==="1",cmdRpm:p[6],accel:p[7],timeRem:p[8],step:p[9],pvSp:p[10],pvAc:p[11],pvTm:p[12],name:p.slice(17).join("|")};
@@ -320,7 +321,7 @@ async function saveRecipeRemote(r){
 
 /* ---------- login ---------- */
 function isGuest(){return !session||session.mode==="guest";}
-async function afterAuth(){
+async function afterAuth(fresh){
   const {data:{user}}=await sb.auth.getUser();
   session={mode:"linked",userId:user?user.id:null,serial:null};
   try{
@@ -329,15 +330,15 @@ async function afterAuth(){
   }catch(e){eqId=null;console.log("equipments:",e.message);}
   await loadRemoteRecipes();
   $("login").classList.add("hidden");
-  afterLogin();
+  afterLogin(fresh);
   if(!eqId)toast("No equipment linked to this account");
 }
-function afterLogin(){
+function afterLogin(fresh){
   applyLock();
   $("statusBadge").className="badge"+(isGuest()?" guest":"");
   $("statusBadge").textContent=isGuest()?"GUEST":(session.serial||"READY");
   showView("control");renderAll();
-  if(!isGuest())bleStartFlow();
+  if(!isGuest())bleStartFlow(fresh);
 }
 function applyLock(){
   const g=isGuest();
@@ -358,7 +359,7 @@ $("btnLogin").onclick=async()=>{
   $("btnLogin").disabled=false;
   if(error){warn(error.message);return;}
   localStorage.removeItem("spinx_guest");
-  await afterAuth();toast("Signed in: "+s);
+  await afterAuth(true);toast("Signed in: "+s);
 };
 $("btnGuest").onclick=()=>{localStorage.setItem("spinx_guest","1");session={mode:"guest"};$("login").classList.add("hidden");afterLogin();toast("Guest mode");};
 
@@ -379,7 +380,7 @@ async function onQR(txt){
   let serial=txt,password=null;
   try{const o=JSON.parse(txt);serial=o.serial||o.s||txt;password=o.password||o.p||o.key||null;}catch(e){}
   stopQR();
-  if(password){const {error}=await sb.auth.signInWithPassword({email:serialToEmail(serial),password});if(error){warn(error.message);return;}localStorage.removeItem("spinx_guest");await afterAuth();toast("Signed in via QR");}
+  if(password){const {error}=await sb.auth.signInWithPassword({email:serialToEmail(serial),password});if(error){warn(error.message);return;}localStorage.removeItem("spinx_guest");await afterAuth(true);toast("Signed in via QR");}
   else{$("liSerial").value=serial;toast("Serial filled - enter password");}
 }
 
@@ -425,7 +426,7 @@ $("addStep").onclick=()=>{if(edit.activeSteps<6){edit.activeSteps++;editStep=edi
 $("delStep").onclick=()=>{if(edit.activeSteps>1){edit.activeSteps--;if(editStep>=edit.activeSteps)editStep=edit.activeSteps-1;renderEditor();}};
 $("edName").oninput=e=>{edit.name=e.target.value.toUpperCase();};
 $("edBack").onclick=()=>showView("recipes");
-$("edSave").onclick=async()=>{edit.name=edit.name||"BLANK";edit.updatedAt=Date.now();recipes[edit.index]=JSON.parse(JSON.stringify(edit));saveLocal();await saveRecipeRemote(recipes[edit.index]);toast(eqId?"Recipe saved (cloud + browser)":"Recipe saved (browser)");showView("recipes");};
+$("edSave").onclick=async()=>{edit.name=edit.name||"BLANK";edit.updatedAt=Date.now();recipes[edit.index]=JSON.parse(JSON.stringify(edit));saveLocal();await saveRecipeRemote(recipes[edit.index]);if(bleOn)bleSaveRecipe(recipes[edit.index]);toast(bleOn?"Saved (browser + cloud + equipment)":(eqId?"Saved (browser + cloud)":"Saved (browser)"));showView("recipes");};
 
 /* ---------- tutorials ---------- */
 const TUTORIALS=[{title:"Getting started with SPIN X Lite",id:"dQw4w9WgXcQ"},{title:"Loading a substrate and running a recipe",id:"dQw4w9WgXcQ"},{title:"Creating and editing recipes",id:"dQw4w9WgXcQ"}];
@@ -458,6 +459,21 @@ async function renderSync(){
 $("pushRemote").onclick=async()=>{if(!eqId){toast("No equipment linked");return;}for(const r of recipes)await saveRecipeRemote(r);toast("Pushed browser -> cloud");renderSync();};
 $("pullRemote").onclick=async()=>{if(!eqId){toast("No equipment linked");return;}await loadRemoteRecipes();toast("Pulled cloud -> browser");renderAll();renderSync();};
 
+function bleSaveRecipe(r){const csv=r.steps.slice(0,r.activeSteps).map(s=>s.speed+","+s.accel+","+s.time).join(";");bleSend("SAVE "+r.index+"|"+(r.name||"BLANK")+"|"+r.activeSteps+"|"+csv);}
+async function reconcileOnConnect(){
+  if(!bleEquipRecipes||isGuest())return;
+  const diffs=[];
+  for(let i=0;i<12;i++){const e=bleEquipRecipes[i];if(!e)continue;if(recipeSig(recipes[i])!==recipeSig(e))diffs.push(i);}
+  if(diffs.length)showSyncModal(diffs);
+}
+function showSyncModal(diffs){
+  const rows=diffs.map(i=>'<div class="mrow"><span><b>#'+i+'</b> app: '+esc(recipes[i].name)+'</span><span>equip: '+esc(bleEquipRecipes[i].name)+'</span></div>').join("");
+  $("syncMbox").innerHTML='<h2>Recipes differ</h2><p class="msub">The equipment differs from your app in '+diffs.length+' recipe(s). Which should win?</p><div class="mlist">'+rows+'</div><div class="mbtns"><button class="mbtn1" id="mSend">Use my recipes (send to equipment)</button><button class="mbtn2" id="mKeep">Keep the equipment recipes</button><button class="mbtn3" id="mLater">Decide later</button></div>';
+  $("syncModal").classList.remove("hidden");
+  $("mSend").onclick=()=>{diffs.forEach(i=>bleSaveRecipe(recipes[i]));$("syncModal").classList.add("hidden");toast("Sent "+diffs.length+" recipe(s) to equipment");setTimeout(()=>bleSend("RECIPES"),900);};
+  $("mKeep").onclick=async()=>{$("syncModal").classList.add("hidden");for(const i of diffs){recipes[i]=JSON.parse(JSON.stringify(bleEquipRecipes[i]));saveLocal();await saveRecipeRemote(recipes[i]);}toast("App + cloud updated from equipment");renderAll();};
+  $("mLater").onclick=()=>$("syncModal").classList.add("hidden");
+}
 document.getElementById("btnVac").onclick=()=>{if(bleOn){bleSend("VAC "+($("btnVac").classList.contains("on")?"0":"1"));setTimeout(()=>bleSend("STATUS"),150);}};
 document.getElementById("btnStart").onclick=()=>{if(bleOn){bleSend("START");setTimeout(()=>bleSend("STATUS"),150);}};
 document.getElementById("btnStop").onclick=()=>{if(bleOn){bleSend("STOP");setTimeout(()=>bleSend("STATUS"),150);}};
@@ -469,6 +485,6 @@ function renderAll(){renderPreview();if(view==="recipes")renderRecipes();if(view
 (async function boot(){
   recipes=localRecipes()||defaultRecipes();
   if(localStorage.getItem("spinx_guest")==="1"){session={mode:"guest"};$("login").classList.add("hidden");afterLogin();return;}
-  try{const {data:{session:s}}=await sb.auth.getSession();if(s){await afterAuth();}}catch(e){}
+  try{const {data:{session:s}}=await sb.auth.getSession();if(s){await afterAuth(false);}}catch(e){}
 })();
 </script></body></html>
