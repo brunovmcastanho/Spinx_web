@@ -286,28 +286,34 @@ function startBlePoll(){stopBlePoll();blePoll=setInterval(()=>{if(bleOn&&view===
 function stopBlePoll(){if(blePoll){clearInterval(blePoll);blePoll=null;}}
 function bleLine(line){
   if(line.startsWith("S|"))bleApplyStatus(line);
+  else if(line.startsWith("C|")){const idx=+line.split("|")[1];if(!isNaN(idx))applyEquipSlot(idx);}
   else if(line.startsWith("R|")){const p=line.split("|");const idx=+p[1];const g=(p[4]||"").split(";");const steps=[];for(let i=0;i<6;i++){const a=(g[i]||"0,0,0").split(",");steps.push({speed:+a[0]||0,accel:+a[1]||0,time:+a[2]||0});}bleRecAccum[idx]={index:idx,name:p[2],activeSteps:+p[3]||0,steps:steps};}
   else if(line==="REND"){bleEquipRecipes=[];for(let i=0;i<12;i++)if(bleRecAccum[i])bleEquipRecipes.push(bleRecAccum[i]);console.log("BLE recipes:",bleEquipRecipes.length);bleRecAccum={};if(view==="sync")renderSync();if(view==="control")renderControlLive();if(!bleReconciled){bleReconciled=true;reconcileOnConnect();}}
 }
 function bleApplyStatus(line){const p=line.split("|");
-  bleStatus={state:p[1],vac:p[2]==="1",kpa:p[3],ind:p[4]==="1",canStart:p[5]==="1",cmdRpm:p[6],accel:p[7],timeRem:p[8],step:p[9],pvSp:p[10],pvAc:p[11],pvTm:p[12],slot:(p[13]!==undefined&&p[13]!=="")?+p[13]:null,name:p.slice(17).join("|")};
-  followEquipSlot(bleStatus);
+  bleStatus={state:p[1],vac:p[2]==="1",kpa:p[3],ind:p[4]==="1",canStart:p[5]==="1",cmdRpm:p[6],accel:p[7],timeRem:p[8],step:p[9],pvSp:p[10],pvAc:p[11],pvTm:p[12],name:p.slice(17).join("|")};
+  followEquipName(bleStatus);
   applyLock();if(view==="control")renderControlLive();if(view==="recipes")renderRecipes();}
-/* Segue o slot ativo do equipamento SO quando ele MUDA (borda), nunca a cada STATUS.
-   Enquanto uma selecao do usuario esta pendente, ignora o slot antigo ate o equipamento confirmar. */
-function followEquipSlot(s){
-  let idx=(s.slot!==null&&s.slot>=0&&s.slot<12)?s.slot:-1;
-  if(idx<0&&s.name){const f=recipes.findIndex(r=>r.name===s.name);if(f>=0)idx=f;} // fallback por nome
+/* Slot ativo autoritativo vem da linha C|<idx> (dentro do RECIPES). O STATUS so traz o NOME,
+   entao usamos o nome para confirmar a selecao pendente e para seguir trocas feitas na IHM. */
+function applyEquipSlot(idx){                       // chamado quando recebemos C|<idx>
+  if(idx<0||idx>11)return;
+  if(pendingSelect!==null){ if(idx===pendingSelect)pendingSelect=null; else if(Date.now()<pendingUntil)return; else pendingSelect=null; }
+  lastEquipSlot=idx;
+  if(idx!==current){current=idx;saveLocal();if(view==="recipes")renderRecipes();if(view==="control"&&!(bleOn&&bleStatus))renderPreview();}
+}
+function followEquipName(s){                          // confirmacao/troca via nome no STATUS
+  if(!s.name)return;
+  const idx=recipes.findIndex(r=>r.name===s.name);
   if(idx<0)return;
-  // trava pos-selecao: espera o equipamento confirmar o slot que o usuario pediu
   if(pendingSelect!==null){
-    if(idx===pendingSelect){pendingSelect=null;lastEquipSlot=idx;}     // confirmou
-    else if(Date.now()<pendingUntil)return;                            // ainda mudando -> nao reverte
-    else{pendingSelect=null;}                                          // timeout -> volta ao normal
+    if(idx===pendingSelect){pendingSelect=null;lastEquipSlot=idx;}   // maquina confirmou pelo nome
+    else if(Date.now()<pendingUntil)return;                          // ainda trocando -> nao reverte
+    else pendingSelect=null;                                         // timeout
   }
-  if(lastEquipSlot===null){lastEquipSlot=idx;} // primeira leitura apos conectar: adota sem "mudanca"
-  else if(idx!==lastEquipSlot){lastEquipSlot=idx;} // equipamento trocou de fato (ex.: pela IHM) -> segue
-  else return; // slot repetido -> nao mexe no que o usuario escolheu
+  if(lastEquipSlot===null){lastEquipSlot=idx;}
+  else if(idx!==lastEquipSlot){lastEquipSlot=idx;}   // trocou de fato (IHM)
+  else return;
   if(idx!==current){current=idx;saveLocal();if(view==="recipes")renderRecipes();}
 }
 function renderControlLive(){if(!bleStatus)return;const s=bleStatus,run=(s.state!=="idle");
@@ -448,14 +454,15 @@ $("edBack").onclick=()=>showView("recipes");
 $("edSave").onclick=async()=>{edit.name=edit.name||"BLANK";edit.updatedAt=Date.now();recipes[edit.index]=JSON.parse(JSON.stringify(edit));saveLocal();await saveRecipeRemote(recipes[edit.index]);if(bleOn)bleSaveRecipe(recipes[edit.index]);toast(bleOn?"Saved (browser + cloud + equipment)":(eqId?"Saved (browser + cloud)":"Saved (browser)"));showView("recipes");};
 
 /* ---------- selecionar receita ativa (app + equipamento) ---------- */
-function bleSelectRecipe(idx){bleSend("SELECT "+idx);}
+function bleSelectRecipe(idx){bleSend("SEL "+idx);}   // firmware: if(verb=="SEL") Dwin::selectRecipe(idx)
 function selectRecipe(idx){
   current=idx;saveLocal();
   if(bleOn){
-    pendingSelect=idx;pendingUntil=Date.now()+4000;   // trava: STATUS nao reverte ate confirmar (ou 4s)
+    pendingSelect=idx;pendingUntil=Date.now()+4000;   // trava: nao reverte ate confirmar (ou 4s)
     bleSelectRecipe(idx);
-    setTimeout(()=>bleSend("STATUS"),150);
-    setTimeout(()=>bleSend("STATUS"),700);             // 2o check enquanto a maquina troca
+    setTimeout(()=>bleSend("STATUS"),150);             // confirma pelo nome
+    setTimeout(()=>bleSend("RECIPES"),300);            // confirma pelo indice (linha C|)
+    setTimeout(()=>bleSend("STATUS"),800);
     toast("Active on equipment: "+recipes[idx].name);
   }else{
     toast("Active: "+recipes[idx].name);
