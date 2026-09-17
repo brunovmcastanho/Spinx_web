@@ -237,11 +237,12 @@ const K_REC="spinx_recipes";
 let recipes=[],current=0,view="control",edit=null,editStep=0,session=null,eqId=null;
 const BLE_SVC="6e400001-b5a3-f393-e0a9-e50e24dcca9e",BLE_RX="6e400002-b5a3-f393-e0a9-e50e24dcca9e",BLE_TX="6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 let bleDev=null,bleRx=null,bleTx=null,bleOn=false,bleBuf="",bleStatus=null,bleEquipRecipes=null,bleRecAccum={},blePoll=null,bleReconciled=false;
+let lastEquipSlot=null,pendingSelect=null,pendingUntil=0;  // reverse-sync por borda + trava apos selecionar
 async function bleSetup(srv){
   const s=await srv.getPrimaryService(BLE_SVC);
   bleRx=await s.getCharacteristic(BLE_RX);bleTx=await s.getCharacteristic(BLE_TX);
   await bleTx.startNotifications();bleTx.addEventListener("characteristicvaluechanged",bleNotify);
-  bleOn=true;bleReconciled=false;$("btConnect").classList.add("on");$("btConnect").textContent="BT\u2713";
+  bleOn=true;bleReconciled=false;lastEquipSlot=null;pendingSelect=null;$("btConnect").classList.add("on");$("btConnect").textContent="BT\u2713";
   hideBleGate();applyLock();startBlePoll();
   bleSend("STATUS");bleSend("RECIPES");
   setTimeout(()=>{ if(bleOn && (!bleEquipRecipes || !bleEquipRecipes.length)){ console.log("RECIPES retry"); bleSend("RECIPES"); } },2500);
@@ -270,7 +271,7 @@ async function bleAutoReconnect(){
   }catch(e){return false;}
 }
 function bleStartFlow(nag){bleAutoReconnect().then(ok=>{if(!ok&&nag)showBleGate();});}
-function bleDisc(){bleOn=false;$("btConnect").classList.remove("on");$("btConnect").textContent="BT";applyLock();stopBlePoll();toast("Equipment disconnected");}
+function bleDisc(){bleOn=false;lastEquipSlot=null;pendingSelect=null;$("btConnect").classList.remove("on");$("btConnect").textContent="BT";applyLock();stopBlePoll();toast("Equipment disconnected");}
 function bleNotify(e){bleBuf+=new TextDecoder().decode(e.target.value);let nl;while((nl=bleBuf.indexOf("\n"))>=0){const line=bleBuf.slice(0,nl);bleBuf=bleBuf.slice(nl+1);if(line)bleLine(line);}}
 let bleWriteChain=Promise.resolve();
 function bleSend(cmd){
@@ -290,8 +291,25 @@ function bleLine(line){
 }
 function bleApplyStatus(line){const p=line.split("|");
   bleStatus={state:p[1],vac:p[2]==="1",kpa:p[3],ind:p[4]==="1",canStart:p[5]==="1",cmdRpm:p[6],accel:p[7],timeRem:p[8],step:p[9],pvSp:p[10],pvAc:p[11],pvTm:p[12],slot:(p[13]!==undefined&&p[13]!=="")?+p[13]:null,name:p.slice(17).join("|")};
-  if(bleStatus.slot!==null && bleStatus.slot>=0 && bleStatus.slot<12) current=bleStatus.slot;
+  followEquipSlot(bleStatus);
   applyLock();if(view==="control")renderControlLive();if(view==="recipes")renderRecipes();}
+/* Segue o slot ativo do equipamento SO quando ele MUDA (borda), nunca a cada STATUS.
+   Enquanto uma selecao do usuario esta pendente, ignora o slot antigo ate o equipamento confirmar. */
+function followEquipSlot(s){
+  let idx=(s.slot!==null&&s.slot>=0&&s.slot<12)?s.slot:-1;
+  if(idx<0&&s.name){const f=recipes.findIndex(r=>r.name===s.name);if(f>=0)idx=f;} // fallback por nome
+  if(idx<0)return;
+  // trava pos-selecao: espera o equipamento confirmar o slot que o usuario pediu
+  if(pendingSelect!==null){
+    if(idx===pendingSelect){pendingSelect=null;lastEquipSlot=idx;}     // confirmou
+    else if(Date.now()<pendingUntil)return;                            // ainda mudando -> nao reverte
+    else{pendingSelect=null;}                                          // timeout -> volta ao normal
+  }
+  if(lastEquipSlot===null){lastEquipSlot=idx;} // primeira leitura apos conectar: adota sem "mudanca"
+  else if(idx!==lastEquipSlot){lastEquipSlot=idx;} // equipamento trocou de fato (ex.: pela IHM) -> segue
+  else return; // slot repetido -> nao mexe no que o usuario escolheu
+  if(idx!==current){current=idx;saveLocal();if(view==="recipes")renderRecipes();}
+}
 function renderControlLive(){if(!bleStatus)return;const s=bleStatus,run=(s.state!=="idle");
   $("recName").textContent=s.name||"-";const bb=$("statusBadge");bb.className="badge";
   if(s.state==="running"){bb.textContent="RUNNING";bb.classList.add("run");}else if(s.state==="stopping"){bb.textContent="STOPPING";bb.classList.add("stop");}else bb.textContent="READY";
@@ -432,15 +450,18 @@ $("edSave").onclick=async()=>{edit.name=edit.name||"BLANK";edit.updatedAt=Date.n
 /* ---------- selecionar receita ativa (app + equipamento) ---------- */
 function bleSelectRecipe(idx){bleSend("SELECT "+idx);}
 function selectRecipe(idx){
-  current=idx;
+  current=idx;saveLocal();
   if(bleOn){
+    pendingSelect=idx;pendingUntil=Date.now()+4000;   // trava: STATUS nao reverte ate confirmar (ou 4s)
     bleSelectRecipe(idx);
     setTimeout(()=>bleSend("STATUS"),150);
+    setTimeout(()=>bleSend("STATUS"),700);             // 2o check enquanto a maquina troca
     toast("Active on equipment: "+recipes[idx].name);
   }else{
     toast("Active: "+recipes[idx].name);
   }
-  renderRecipes();renderPreview();
+  renderRecipes();
+  if(!(bleOn&&bleStatus))renderPreview();
 }
 
 /* ---------- tutorials ---------- */
